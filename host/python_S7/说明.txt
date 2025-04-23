@@ -1,0 +1,15 @@
+编辑于0410，里面的代码来自0409去工厂的代码，均能正常运行
+python_S7是负责上位机、plc、机械臂之间通信的代码
+
+jiege.py是规划好点位并写在main_point.txt中后，协调机械臂到达指定点位并拍照的代码
+main_point.txt是每次运行jiege.py时，机械臂走的点位
+collect_imgs.py运行会把当前点位保存在xxx.txt内
+test.py用于获取当前点位机械臂的位姿（输出在终端，功能和collect_imgs.py一样）
+
+robot.txt为孙磊标定相机时，机械臂的25个点位位姿
+0409.txt为周二去工厂时，拍照15个点位机械臂对应的位姿
+
+python_S7.zip是0409周二从工厂回来以后打包的源码
+压缩包中的S7_test.py和plc_S7.py是1月份的代码，不用管
+
+实际运行过程中，先示教好点位，调整机械臂到指定位置并保证相机视野合适后，运行test.py，获取机械臂的位姿并写在main_point.txt中，然后运行jiege.py，进行拍照

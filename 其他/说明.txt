@@ -1,0 +1,3 @@
+collect_imgs.py运行会把当前点位保存在xxx.txt内
+once是主从配合只拍一张照片的代码
+host0315是之前没有对host中拍照代码打包成类的

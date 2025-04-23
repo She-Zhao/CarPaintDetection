@@ -1,0 +1,16 @@
+slaveX_xxx.py的功能是开启监听，配合主机的jiege.py进行拍照
+终端调用时，若时序有问题 可通过python ./slaveX_xxx.py --delay=??进行更改（？？默认是60一般没有问题，单位ms）
+具体原理：
+启动slaveX_xxx.py，从机X一直监听，收到主机命令后拍照，每拍一张照，CAPTURE_CNT+1，当拍完10张照片（有一张没用）即CAPTURE_CNT=10时，创建文件夹posi，i从1开始增加直到没有文件夹posi，将照片保存在该文件夹内，然后CAMERA_FLAG+1.
+
+该py文件的变量CAMERA_FLAG记录了点位信息，只在每次重新运行slaveX_xxx.py时才置0；但是pmdX_xxx.py每次执行完之后会置0
+
+
+可能的问题：
+如果没有走完五个点，pmd的处理可能有错误
+举例：机械臂走了四个点手动给停止了，此时CAMERA_FLAG=4，只有当下一次机械臂运行拍照完毕后CAMERA_FLAG才会再+1，此时pmd才会运行进行处理。
+解决方法：
+先示教点位，不开启pmd和yolo，只开启slaveX_xxx.py，确认点位没问题后，再开启pmd和yolo
+如果找不到原因，就把一切回复到原来的状态，删除output/Camera和output/Absolute_pha内的所有文件，然后重新运行slaveX_xxx.py（一定要重新运行，不要直接vim Flag.txt更改flag！）
+
+本次没有更改slave_0327只是写了说明
