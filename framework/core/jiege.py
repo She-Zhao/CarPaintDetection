@@ -1,26 +1,24 @@
+# -*-coding:utf-8 -*-
 import numpy as np
 import time
 # from snap7 import client, util, types
-import socket
-
-
-# -*-coding:utf-8 -*-
 import screeninfo
 import keyboard
-# camera
-import datetime
-# camera end
-import numpy as np
-import os
-import sys
+
 import socket
 from pypylon import pylon
 import cv2
-import time
 import paramiko # 用于调用scp命令
 from scp import SCPClient
 from concurrent.futures import ThreadPoolExecutor
 import torch
+import sys
+from pathlib import Path
+
+current_file = Path(__file__).resolve()
+framework_root = current_file.parent.parent
+sys.path.insert(0, str(framework_root))
+
 from module import Host
 
 

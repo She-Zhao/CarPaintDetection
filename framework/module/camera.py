@@ -1,8 +1,8 @@
-import numpy as np
 import os
 import pypylon.pylon as py
 import cv2
 import time
+from pathlib import Path
 
 class CameraControl :
     def __init__(self, exposure_time=8000, height=None, width=None,
@@ -86,7 +86,8 @@ class CameraControl :
 
     def _save_images(self):
         for serial, imgs in self.img_buffers.items():
-            root_dir = os.path.join("output", str(serial))     # 这里一定保证是从framework开始执行代码
+            base_dir = Path(__file__).resolve().parent.parent            # 当前文件的上上一级，framework文件夹 
+            root_dir = os.path.join(base_dir, "output", str(serial))     # framework/output/相机序列号
             os.makedirs(root_dir, exist_ok=True)
 
             # 查找当前最大的 pos 索引

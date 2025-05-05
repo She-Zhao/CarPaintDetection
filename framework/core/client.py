@@ -1,15 +1,16 @@
 # -*-coding:utf-8 -*-
-import numpy as np
 import os
-import pypylon.pylon as py
-import cv2
 import time
+import sys
+from pathlib import Path
+
+current_file = Path(__file__).resolve()
+framework_root = current_file.parent.parent
+sys.path.insert(0, str(framework_root))
 
 from module import SocketServer, CameraControl, Host
-
-import socket
 import argparse
-from typing import Optional, Tuple
+
 
 IMAGE_NAMES= ["zhj","gc0","gc1","gc2","gc3","gc4","sin0","sin1","sin2","sin3"]#存储图像的命名顺序
 CAMERA_FLAG = 0     #当前采集点位的数量

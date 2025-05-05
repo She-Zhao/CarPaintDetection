@@ -22,6 +22,13 @@ sever_capture.py - 主机拍照控制模块
 
 # -*-coding:utf-8 -*-
 import cv2
+import sys
+from pathlib import Path
+
+current_file = Path(__file__).resolve()
+framework_root = current_file.parent.parent
+sys.path.insert(0, str(framework_root))
+
 from module import Host
 
 
@@ -54,5 +61,5 @@ def main(folder_path):
 
 
 if __name__ == '__main__':
-    folder_path = r'D:\Project\CarPaintDetection\code\host\patterns\nums10'
-    main()
+    folder_path = r'D:\Project\CarPaintDetection\framework\data\patterns\nums10'
+    main(folder_path)
