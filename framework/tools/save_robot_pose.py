@@ -1,3 +1,15 @@
+"""
+save_robot_pose.py - 保存机械臂位姿工具
+
+该模块负责保存机械臂位姿到txt中，即原来的collect_imgs.py
+
+功能说明:
+    - 调整机械臂到指定位置
+    - 运行save_robot_pose.py
+
+最后一次修改：2025/05/05
+"""
+
 import numpy as np
 import time
 from snap7 import client, util, types

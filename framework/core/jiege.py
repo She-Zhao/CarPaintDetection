@@ -21,7 +21,7 @@ import paramiko # 用于调用scp命令
 from scp import SCPClient
 from concurrent.futures import ThreadPoolExecutor
 import torch
-from host0315_function import Host
+from module import Host
 
 
 # global var
@@ -205,8 +205,6 @@ if __name__ == '__main__':
 
                 break
             time.sleep(0.1)
-
-
 
     # plc_mode, veichel_state, completed_pose = plc_S7_1500.read_plc()
     # print("plc_mode: " + str(plc_mode) + "; veichel_state: " + str(veichel_state) + "; completed_pose: " + str(completed_pose.index))
