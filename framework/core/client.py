@@ -11,9 +11,7 @@ sys.path.insert(0, str(framework_root))
 from module import SocketServer, CameraControl, Host
 import argparse
 
-
-IMAGE_NAMES= ["zhj","gc0","gc1","gc2","gc3","gc4","sin0","sin1","sin2","sin3"]#存储图像的命名顺序
-CAMERA_FLAG = 0     #当前采集点位的数量
+CAMERA_FLAG = 0     # 当前采集点位的数量
     
 def write_camera_flag():
     #存储完毕CAMERA_FLAG+1
@@ -85,30 +83,5 @@ def main():
             print("🕒 等待重新连接...")
             time.sleep(1)
 
-
-
 if __name__ == '__main__':
     main()
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--delay', type=int, default = 1000)
-    # args = parser.parse_args()    
-    
-    # while True:
-    #     try:                 
-    #         with SocketServer(host='10.18.18.11', base_port=4096, retries=5) as server:
-    #             camera, tracker = create_camera_with_callback(server)
-    #             # tracker.expected_serials = set(camera.img_buffers.keys())
-
-    #             while True:
-    #                 host_order = server.safe_receive()  
-    #                 if host_order != "capture_order":
-    #                     raise RuntimeError(f"协议错误，期望 'capture_order'，收到 '{host_order}'")
-    #                 print(f'收到主机拍照指令 {host_order}')
-
-    #                 tracker.expected_serials = set(camera.img_buffers.keys())
-    #                 camera.start_grabbing()
-
-    #     except (RuntimeError, ConnectionError, KeyboardInterrupt) as e:  
-    #         print(f"❌ 连接异常: {str(e)}")
-    #         print("🕒 等待重新连接...")
-    #         time.sleep(1)  # 适当增加重连间隔

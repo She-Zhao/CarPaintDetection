@@ -4,7 +4,11 @@ import cv2
 import time
 from pathlib import Path
 
+  # 存储图像的命名顺序
+
 class CameraControl :
+    IMAGE_NAMES= ["zhj","gc0","gc1","gc2","gc3","gc4","sin0","sin1","sin2","sin3"]  # 作为类常量，所有实例共享一个
+
     def __init__(self, exposure_time=8000, height=None, width=None,
                  max_frames=10, capture_callback=None):
         self.exposure_time = exposure_time
@@ -88,7 +92,7 @@ class CameraControl :
         for serial, imgs in self.img_buffers.items():
             base_dir = Path(__file__).resolve().parent.parent            # 当前文件的上上一级，framework文件夹 
             root_dir = os.path.join(base_dir, "output", str(serial))     # framework/output/相机序列号
-            os.makedirs(root_dir, exist_ok=True)
+            os.makedirs(root_dir, exist_ok=True)                         
 
             # 查找当前最大的 pos 索引
             existing_indices = []
@@ -107,6 +111,6 @@ class CameraControl :
 
             # 保存图像
             for img_idx, img in enumerate(imgs):
-                cv2.imwrite(os.path.join(save_dir, f"{img_idx:04d}.png"), img)
+                cv2.imwrite(os.path.join(save_dir, f"{self.IMAGE_NAMES[img_idx]}.png"), img)
             print(f"相机 {serial} 已保存 {len(imgs)} 张图像")
             self.img_buffers[serial] = []
