@@ -23,15 +23,15 @@ class Host():
         self.folder_path = folder_path
                 # 初始socket通信的端口连接
         self.server_host_1 = '10.18.18.11' #'从机IP地址四个从机可以输入四个'
-        self.server_host_2 = '10.18.18.12' 
-        self.server_host_3 = '10.18.18.13' 
-        self.server_host_4 = '10.18.18.14' 
+        # self.server_host_2 = '10.18.18.12' 
+        # self.server_host_3 = '10.18.18.13' 
+        # self.server_host_4 = '10.18.18.14' 
         self.server_port = 4096  # 从机监听的端口号
         
         self.client_socket_1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#设置socket工作模式
-        self.client_socket_2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#设置socket工作模式
-        self.client_socket_3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#设置socket工作模式
-        self.client_socket_4 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#设置socket工作模式
+        # self.client_socket_2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#设置socket工作模式
+        # self.client_socket_3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#设置socket工作模式
+        # self.client_socket_4 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#设置socket工作模式
         self.image = self.Projected_init()
 
         
@@ -65,9 +65,9 @@ class Host():
     def Socket_init(self):
         
         self.client_socket_1.connect((self.server_host_1, self.server_port))#与从机端口进行连接
-        self.client_socket_2.connect((self.server_host_2, self.server_port))
-        self.client_socket_3.connect((self.server_host_3, self.server_port))
-        self.client_socket_4.connect((self.server_host_4, self.server_port))
+        # self.client_socket_2.connect((self.server_host_2, self.server_port))
+        # self.client_socket_3.connect((self.server_host_3, self.server_port))
+        # self.client_socket_4.connect((self.server_host_4, self.server_port))
         
         
     def Take_photo(self):
@@ -80,28 +80,28 @@ class Host():
             #客户端Orin0发送给orin1-4命令
             message = 'capture_order'
             self.client_socket_1.sendall(message.encode('utf-8'))#发送指令1 进行拍照
-            self.client_socket_2.sendall(message.encode('utf-8'))#发送指令1 进行拍照
-            self.client_socket_3.sendall(message.encode('utf-8'))#发送指令1 进行拍照
-            self.client_socket_4.sendall(message.encode('utf-8'))#发送指令1 进行拍照
+            # self.client_socket_2.sendall(message.encode('utf-8'))#发送指令1 进行拍照
+            # self.client_socket_3.sendall(message.encode('utf-8'))#发送指令1 进行拍照
+            # self.client_socket_4.sendall(message.encode('utf-8'))#发送指令1 进行拍照
             print(f'客户端发出命令:{message}')
             
             while 1:                                                #给其他几个orin发送完命令后，循环监听，等待从orin的回复指令
                 data1 = self.client_socket_1.recv(1024)                  #接受信息并存储到data中，设置信息最大为2个字节
-                data2 = self.client_socket_2.recv(1024)
-                data3 = self.client_socket_3.recv(1024)
-                data4 = self.client_socket_4.recv(1024)
+                # data2 = self.client_socket_2.recv(1024)
+                # data3 = self.client_socket_3.recv(1024)
+                # data4 = self.client_socket_4.recv(1024)
                 
                 slave1_respond = data1.decode('utf-8')
-                slave2_respond = data2.decode('utf-8')
-                slave3_respond = data3.decode('utf-8')
-                slave4_respond = data4.decode('utf-8')
+                # slave2_respond = data2.decode('utf-8')
+                # slave3_respond = data3.decode('utf-8')
+                # slave4_respond = data4.decode('utf-8')
                 print(f'客户端收到服务端响应:{slave1_respond}')
-                if slave1_respond == "switch_pattern" and slave2_respond == "switch_pattern" and slave3_respond == "switch_pattern" and slave4_respond == "switch_pattern":
-                # if slave1_respond == "switch_pattern" :    
+                # if slave1_respond == "switch_pattern" and slave2_respond == "switch_pattern" and slave3_respond == "switch_pattern" and slave4_respond == "switch_pattern":
+                if slave1_respond == "switch_pattern" :    
                     break 
                 
-                elif (not slave1_respond) or (not slave2_respond) or (not slave3_respond) or (not slave4_respond):
-                # elif (not slave1_respond):
+                # elif (not slave1_respond) or (not slave2_respond) or (not slave3_respond) or (not slave4_respond):
+                elif (not slave1_respond):
                     break
                 
         tb = time.time()
@@ -113,9 +113,9 @@ class Host():
         
     def Disconnect(self):
         self.client_socket_1.close()
-        self.client_socket_2.close()
-        self.client_socket_3.close()
-        self.client_socket_4.close()
+        # self.client_socket_2.close()
+        # self.client_socket_3.close()
+        # self.client_socket_4.close()
         
     
 
@@ -128,7 +128,7 @@ def delay_ms(ms):
     
 if __name__ == '__main__':
 
-    folder_path = r'/home/nvidia/demo/host/patterns/16'
+    folder_path = r'D:\Project\CarPaintDetection\code\host\patterns\16'
     host = Host(folder_path)
     
     # client_socket_1,client_socket_2,client_socket_3,client_socket_4 = host.Socket_init()     #初始化Socket通信
