@@ -57,7 +57,6 @@ def create_camera_with_callback(server, exposure=8000, max_frames=10):
         capture_callback=_capture_callback
     ), tracker
 
-
 def main():
     """主控制逻辑封装"""
     parser = argparse.ArgumentParser()
