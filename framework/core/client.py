@@ -1,5 +1,15 @@
+"""
+文件: client.py
+功能: 从机端核心控制模块，处理主机指令并同步相机采集
+依赖: 
+- module.SocketServer: 网络通信模块
+- module.CameraControl: 相机控制模块
+- argparse: 命令行参数解析
+
+典型用法:
+>>> python client.py --delay=1500  # 启动从机服务，设置重连延迟1.5秒
+"""
 # -*-coding:utf-8 -*-
-import os
 import time
 import sys
 from pathlib import Path
@@ -8,35 +18,56 @@ current_file = Path(__file__).resolve()
 framework_root = current_file.parent.parent
 sys.path.insert(0, str(framework_root))
 
-from module import SocketServer, CameraControl, Host
+from module import SocketServer, CameraControl
 import argparse
 
-CAMERA_FLAG = 0     # 当前采集点位的数量
-    
-def write_camera_flag():
-    #存储完毕CAMERA_FLAG+1
-    global CAMERA_FLAG
-    CAMERA_FLAG += 1
-    print('CAMERA_FLAG:',CAMERA_FLAG)
-    
-    file_path = os.path.join(os.path.dirname(__file__),'FLAG.txt')           # txt文件路径         
-    with open(file_path, 'w') as file:
-        file.write(f'CAMERA_FLAG={CAMERA_FLAG}\n')              # txt写入文件
-
-    print(f'CAMERA_FLAG={CAMERA_FLAG} 已写入 {file_path}')     
-
 class CaptureTracker:
-    """相机采集状态跟踪器"""
+    """多相机采集状态跟踪器
+    
+    主要职责:
+    - 记录预期需要采集的相机序列号集合
+    - 跟踪实际已完成的采集任务
+    - 管理相机与主机的状态同步
+    
+    属性:
+        expected_serials (set): 预期采集的相机序列号集合
+        received_serials (set): 已接收的相机序列号集合
+    """
     def __init__(self):
         self.expected_serials = set()  # 预期需要接收的相机序列号
         self.received_serials = set()  # 实际接收到的序列号
 
 def create_camera_with_callback(server, exposure=8000, max_frames=10):
-    """创建带回调的相机工厂函数"""
+    """创建带协议状态管理的相机实例
+    
+    🌟 核心流程说明:
+    1. 创建状态跟踪器 (CaptureTracker)
+    2. 定义闭包回调函数，捕获tracker和server上下文
+    3. 当所有相机完成采集时: 
+       - 发送'switch_pattern'通知主机
+       - 等待下个'capture_order'指令
+    4. 返回绑定协议的相机控制器
+    
+    Args:
+        server (SocketServer): 已连接的Socket服务实例
+        exposure (int): 相机曝光时间（微秒），默认8000μs
+        max_frames (int): 单次采集最大帧数，默认10帧
+        
+    Returns:
+        tuple: (CameraControl实例, CaptureTracker状态跟踪器)
+    """
     tracker = CaptureTracker()
     
     def _capture_callback(serial):
-        """闭包函数捕获tracker和server"""
+        """相机采集完成回调（闭包捕获tracker和server）
+        
+        协议流程:
+        1. 添加当前相机序列号到received_serials
+        2. 当所有expected_serials完成采集:
+           a. 发送'switch_pattern'通知主机切换图案
+           b. 清空接收状态
+           c. 等待下个'capture_order'指令
+        """
         tracker.received_serials.add(serial)
         
         # 当所有预期相机完成采集时
@@ -58,7 +89,19 @@ def create_camera_with_callback(server, exposure=8000, max_frames=10):
     ), tracker
 
 def main():
-    """主控制逻辑封装"""
+    """从机端主控制循环
+    
+    🔄 状态机流程:
+    1. 初始化Socket服务 (自动重试端口)
+    2. 创建带协议绑定的相机控制器
+    3. 等待主机'capture_order'指令
+    4. 设置预期采集的相机集合
+    5. 启动相机采集流程
+    6. 采集时序控制（由--delay参数控制）
+    
+    命令行参数:
+        --delay (int): 重连等待时间（毫秒），默认1000ms
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--delay', type=int, default=1000)
     args = parser.parse_args()

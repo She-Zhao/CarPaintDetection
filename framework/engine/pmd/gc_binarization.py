@@ -1,11 +1,23 @@
-import glob
+"""
+文件: graycode_binarization.py
+功能: 格雷码图像二值化处理模块，同时将条纹级次的计算迁移到了这部分。
+依赖: 
+- OpenCV (图像读取/保存)
+- PyTorch (GPU加速计算)
+- NumPy (数组处理)
+- wrapped_phase.WrappedPhase (阈值计算)
+
+典型用法:
+>>> from graycode_binarization import Binariization
+>>> processor = Binariization(datapath='./graycode_images/')
+>>> binary_codes = processor.get_Binary_wph(offset=15)  # 获取二值化格雷码
+>>> series, series1 = processor.get_series()  # 计算级次图像
+"""
 import os
 import time
 import cv2 as cv
 import numpy as np
 import torch
-import torch.nn.functional as F
-import torchvision.transforms.functional as TF
 from wrapped_phase import WrappedPhase
 from typing import List, Union, Tuple  # 添加导入
 from pathlib import Path
@@ -17,17 +29,20 @@ from pathlib import Path
 '''
 
 class Binariization():
-    '''对格雷码图像进行二值化
+    """格雷码图像二值化处理器
+    
+    核心算法流程:
+    1. 加载5幅格雷码图像 (gc0.png ~ gc4.png)
+    2. 基于相移图计算自适应阈值
+    3. 执行二值化处理
+    4. 生成级次编码图像
 
-    get_GC_images:读取格雷码图像,J_array.shape(4,2048,2448)
-    get_Binary_adaptive:自适应阈值法二值化
-
-    Attributes:
-        datapath:存储格雷码图像的路径
-        imgs: 是否直接输入图像
-        n:n副格雷码图像
-
-    '''
+    属性说明:
+        graycodes (torch.Tensor): 原始格雷码图像GPU张量，形状(5,H,W)
+            - 设备: 自动选择CUDA GPU或CPU
+            - 数值范围: 原始灰度值(0~255)
+        _binary_done (bool): 二值化完成标志
+    """
 
     def __init__(
         self,
@@ -39,6 +54,12 @@ class Binariization():
         th4: float = 1.0,
         th5: float = 1.0,
     ):
+        """初始化格雷码处理器
+        Args:
+            datapath: 格雷码图像目录路径，需包含gc0.png~gc4.png
+            imgs: 直接传入的5张格雷码图像数组，形状需一致
+            th1-th5: 各格雷码图像的阈值权重系数，默认1.0
+        """        
         self.datapath = datapath
         self.imgs = imgs if imgs is not None else imgs
         self.th1 = th1
@@ -54,20 +75,31 @@ class Binariization():
         
 
     def _load_image_data(self) -> torch.Tensor:
-        """加载图像数据到GPU张量"""
+        """加载图像数据到GPU张量
+        Returns:
+            torch.Tensor: 堆叠后的5张格雷码图，形状(5, H, W)
+        """
         if self.imgs is not None:
             return self._convert_to_tensor(self.imgs[:5])
         return self._load_from_datapath()
 
     def _convert_to_tensor(self, img_arrays: np.ndarray) -> torch.Tensor:
-        """将NumPy数组批量转换为GPU张量"""
+        """NumPy数组转GPU张量
+        Args:
+            img_arrays: 输入图像数组列表，长度必须为5
+        Returns:
+            torch.Tensor: 在GPU上的张量，保持uint8类型
+        """
         return torch.stack([
             torch.as_tensor(arr, dtype=torch.uint8, device=self.device)
             for arr in img_arrays
         ], dim=0)
 
     def _load_from_datapath(self) -> torch.Tensor:
-        """从文件系统加载相移图"""
+        """从文件系统加载格雷码图
+        Raises:
+            FileNotFoundError: 当缺少图像文件时抛出
+        """
         img_arrays = []
         for i in range(self.n):
             img_path = os.path.join(self.datapath, f"gc{i}.png")
@@ -76,7 +108,12 @@ class Binariization():
         return self._convert_to_tensor(img_arrays)
 
     def get_threshold(self):
-        '''利用四幅相移图计算阈值'''
+        """计算自适应阈值图
+        基于相移图计算每个像素的灰度平均值作为阈值基准
+
+        Returns:
+            torch.Tensor: 阈值图，形状(H,W)，设备同输入
+        """
         if self.datapath:
             wph = WrappedPhase(datapath = self.datapath)
         elif self.imgs:
@@ -87,10 +124,14 @@ class Binariization():
         return torch.mean(wph.sins, dim=0).round().to(torch.uint8)     #tensor,cuda:0
 
     def get_Binary_wph(self, offset:int=20):
-        '''利用四幅相移图求阈值，将格雷码图像二值化处理
-        Args:增加了一个补偿offset，该值越小，阈值越小，图像越白
-        return:四幅二值化后格雷码图像，tensor,cuda:0
-        '''
+        """执行二值化处理
+        Args:
+            offset: 阈值补偿量(0-255)，值越小二值化结果越白
+            
+        Returns:
+            torch.Tensor: 二值化后的格雷码，形状(5,H,W)
+                        数值为0或255，设备同输入
+        """
         threshold = self.get_threshold()        #threshold.device：cuda:0
 
         self.graycodes[0][self.graycodes[0] <= (threshold + self.th1*offset)] = 0
@@ -119,14 +160,15 @@ class Binariization():
         return self.graycodes
 
     def get_series(self):
-        '''将格雷码转换为级次图像，并保存级次图像
-
-        Args:
-            self.graycodes: 相机格雷码黑白(0 255)图像, tensor,cuda:0, .shape(4,row,col)
+        """生成级次编码图像
+        通过异或运算将格雷码转换为二进制级次
 
         Returns:
-            series，series: 周期级次图像,tensor,cuda:0
-        '''
+            Tuple: (series, series1) 两个级次图
+                   - series: 标准级次图
+                   - series1: 位移补偿级次图
+                   数值范围: 0~31 (5位编码)
+        """
         if not self._binary_done:
             self.get_Binary_wph()
 
