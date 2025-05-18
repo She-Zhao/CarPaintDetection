@@ -57,7 +57,7 @@ class Binariization():
         """初始化格雷码处理器
         Args:
             datapath: 格雷码图像目录路径，需包含gc0.png~gc4.png
-            imgs: 直接传入的5张格雷码图像数组，形状需一致
+            imgs: 直接传入的拍摄5张格雷码图像数组。
             th1-th5: 各格雷码图像的阈值权重系数，默认1.0
         """        
         self.datapath = datapath
@@ -172,7 +172,7 @@ class Binariization():
         if not self._binary_done:
             self.get_Binary_wph()
 
-        self.graycodes = (self.graycodes // 255)
+        self.graycodes = torch.div(self.graycodes, 255, rounding_mode='trunc')  # 等价于//255
 
         rows, cols = self.graycodes[0].shape
         series = torch.zeros((rows, cols), dtype=torch.uint8, device=self.device)

@@ -40,7 +40,7 @@ class Unwrappedphase():
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def get_absphase(self, wrappedphase, series, series1):
-        """计算绝对相位场
+        """计算绝对相位
         
         Args:
             wrappedphase: 包裹相位图，范围[0, 2π]，GPU张量
@@ -61,7 +61,9 @@ class Unwrappedphase():
         unwrapped_pha[idx2] = wrappedphase[idx2] + series[idx2] * 2 * torch.pi
         unwrapped_pha[idx3] = wrappedphase[idx3] + (series1[idx3] - 1) * 2 * torch.pi
 
-        return unwrapped_pha
+        absphase = ((unwrapped_pha*255)/(2**5*torch.pi)).to(torch.uint8) 
+        
+        return absphase
 
 if __name__ == "__main__":
     root_dir = r"/home/nvidia/Project/pmd_adjust/test_imgs"
