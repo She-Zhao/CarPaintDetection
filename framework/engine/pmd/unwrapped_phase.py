@@ -61,7 +61,7 @@ class Unwrappedphase():
         unwrapped_pha[idx2] = wrappedphase[idx2] + series[idx2] * 2 * torch.pi
         unwrapped_pha[idx3] = wrappedphase[idx3] + (series1[idx3] - 1) * 2 * torch.pi
 
-        absphase = ((unwrapped_pha*255)/(2**5*torch.pi)).to(torch.uint8) 
+        absphase = ((unwrapped_pha*255)/(2**5*torch.pi)).to(torch.uint8)    # 映射到0~255，即实际保存的图像
         
         return absphase
 

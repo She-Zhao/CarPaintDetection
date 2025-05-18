@@ -69,7 +69,7 @@ class CameraControl :
             print(f"发现 {num_cameras} 台相机")
 
             self.cam_array = py.InstantCameraArray(num_cameras)
-            self.img_buffers = {}
+            self.img_buffers = {}           # {serial:[imgs_list]}
 
             # 绑定并初始化相机
             for idx, cam in enumerate(self.cam_array):
@@ -128,12 +128,14 @@ class CameraControl :
 
                 finally:
                     res.Release()
-            self._save_images()
+            # self._save_images()
 
         except py.TimeoutException:
             print("采集超时，请检查相机连接")
         finally:
             self.cam_array.StopGrabbing()
+            
+        return list(self.img_buffers.values())
 
     def _save_images(self):
         """保存缓冲图像到output目录
