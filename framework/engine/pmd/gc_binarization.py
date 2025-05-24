@@ -18,7 +18,7 @@ import time
 import cv2 as cv
 import numpy as np
 import torch
-from wrapped_phase import WrappedPhase
+from . import WrappedPhase
 from typing import List, Union, Tuple  # 添加导入
 from pathlib import Path
 
@@ -28,7 +28,7 @@ from pathlib import Path
 
 '''
 
-class Binariization():
+class Binarization():
     """格雷码图像二值化处理器
     
     核心算法流程:
@@ -205,7 +205,7 @@ if __name__ == "__main__":
         img_list = [cv.imread(os.path.join(datapath, img), cv.IMREAD_GRAYSCALE) 
                     for img in sorted(os.listdir(datapath))]
         
-        bgc = Binariization(imgs=img_list)
+        bgc = Binarization(imgs=img_list)
         gc = bgc.get_Binary_wph(12)
         t1 = time.time()
         print(f">>>>>{t1-t0}")

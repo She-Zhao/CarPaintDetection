@@ -20,8 +20,8 @@ import time
 import numpy as np
 import cv2 as cv
 import torch
-from gc_binarization import Binariization
-from wrapped_phase import WrappedPhase 
+from . import Binarization
+from . import WrappedPhase 
 
 class Unwrappedphase():
     """相位解包裹处理器
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         t1 = time.time()
         print(f"折叠相位时间{t1-t0}s")
 
-        B = Binariization(imgs=img_list)
+        B = Binarization(imgs=img_list)
         series, series1 = B.get_series()
         t2 = time.time()
         print(f"条纹级数计算时间{t2-t1}s")

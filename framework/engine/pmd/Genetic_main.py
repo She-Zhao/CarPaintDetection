@@ -6,9 +6,9 @@ import numpy as np
 import math
 import os
 import cv2 as cv
-from gc_binarization import Binariization
-from wrapped_phase import WrappedPhase
-from unwrapped_phase import Unwrappedphase
+from . import Binarization
+from . import WrappedPhase
+from . import Unwrappedphase
 from concurrent.futures import ThreadPoolExecutor
 import statistics
 import csv
@@ -77,7 +77,7 @@ def compute_phase_cuda(datapath,aa):
     th4 = aa[3]
     th5 = aa[4]
     W = WrappedPhase(datapath)
-    B = Binariization(datapath,th1,th2,th3,th4,th5)
+    B = Binarization(datapath,th1,th2,th3,th4,th5)
     U = Unwrappedphase(datapath)
 
     # 计算折叠相位
