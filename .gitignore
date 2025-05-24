@@ -173,3 +173,4 @@ cython_debug/
 # PyPI configuration file
 /source/slave/FLAG.txt
 .idea/
+framework/output/
