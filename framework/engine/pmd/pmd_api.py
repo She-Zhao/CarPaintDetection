@@ -4,9 +4,9 @@ import time
 import numpy as np
 import cv2 as cv
 import torch
-from gc_binarization import Binariization
-from wrapped_phase import WrappedPhase 
-from unwrapped_phase import Unwrappedphase
+from framework.engine.pmd.wrapped_phase import WrappedPhase
+from framework.engine.pmd.gc_binarization import Binarization
+from framework.engine.pmd.unwrapped_phase import Unwrappedphase
 from typing import List
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import multiprocessing
@@ -32,7 +32,7 @@ def run_pmd_single(imgs: List[np.ndarray]) -> Optional[torch.Tensor]:
         W = WrappedPhase(imgs=imgs)
         wph = W.computeWrappedphase()
 
-        B = Binariization(imgs=imgs) 
+        B = Binarization(imgs=imgs) 
         series, series1 = B.get_series()
 
         U = Unwrappedphase()
@@ -71,7 +71,7 @@ def run_pmd(
         imgs: 单组图像列表或多组图像列表的列表。
     
     Returns:
-        g绝对相位列表（CPU Tensor，已归一化范围0-255）
+        绝对相位列表（CPU Tensor，已归一化范围0-255）
     """
     if not isinstance(imgs, List):
         raise TypeError(f"输入必须是 list，但得到 {type(imgs)}")
