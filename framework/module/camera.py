@@ -100,6 +100,9 @@ class CameraControl :
         3. 触发回调并自动保存图像
         4. 超时5秒未收到图像则中断
         
+        return:
+            [相机1采集的一组图像，相机2采集的一组图像]
+            
         Raises:
             py.TimeoutException: 图像采集超时时抛出
         """        

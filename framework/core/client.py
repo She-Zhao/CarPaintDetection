@@ -20,6 +20,7 @@ sys.path.insert(0, str(framework_root))
 
 from module import SocketServer, CameraControl
 import argparse
+from framework.engine.main_api import PipelineExecutor
 
 class CaptureTracker:
     """多相机采集状态跟踪器
@@ -105,7 +106,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--delay', type=int, default=1000)
     args = parser.parse_args()
-
+    executor = PipelineExecutor()       # 引入主流程处理函数，同时初始化检测模型等
     while True:
         try:                 
             with SocketServer(host='10.18.18.11', base_port=4096, retries=5) as server:
@@ -118,7 +119,8 @@ def main():
                     print(f'收到主机拍照指令 {host_order}')
 
                     tracker.expected_serials = set(camera.img_buffers.keys())
-                    camera.start_grabbing()
+                    raw_imgs = camera.start_grabbing()
+                    executor.execute_pipeline(raw_imgs)     # 执行整个算法处理流程
 
         except (RuntimeError, ConnectionError, KeyboardInterrupt) as e:  
             print(f"❌ 连接异常: {str(e)}")
