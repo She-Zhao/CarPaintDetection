@@ -22,7 +22,8 @@ class PipelineExecutor:
         self.output_root = Path(__file__).parent.parent / "output"      # framework/output
         self.output_root.mkdir(parents=True, exist_ok=True)
         self._init_algorithm_modules()
-    
+        self.model = import_module("framework.engine.detect.detect_api").init_model
+        
     # def init_model(self):
     #     return model
 
@@ -49,13 +50,13 @@ class PipelineExecutor:
     def _execute_pipeline(self, raw_imgs):           # List[List[np.ndarray]]
         """顺序执行处理链"""
         # 1. 图像预处理（拼接、有效区域提取等）
-        processed_imgs = self.preprocess(raw_imgs)      # [np.ndarray]
+        processed_imgs = self.preprocess(raw_imgs)      # processed_imgs:未知，豪杰还没做。预计np.ndarray
         
         # 2. PMD相位计算（假设输入为双图）
-        abs_phases = self.pmd(processed_imgs)           # [np.ndarray, np.ndarray]
+        abs_phases = self.pmd(processed_imgs)           # abs_phases: [GPU.tensor, GPU.tensor]
         
         # 3. 缺陷检测
-        defects = self.detect(abs_phases)               # [cls, x, y, w, h, conf]
+        defects = self.detect(self.model, abs_phases)   # defects: [cls, x, y, w, h, conf]
         
         return {
             "raw_imgs": raw_imgs,                       # 原始图像
@@ -88,7 +89,7 @@ class PipelineExecutor:
         
         # 保存相位图
         for i, phase_img in enumerate(result["abs_phase"], start=1):
-            cv2.imwrite(str(pos_dir / f"phase_{i}.png"), phase_img.numpy())
+            cv2.imwrite(str(pos_dir / f"phase_{i}.png"), phase_img.cpu().numpy())
             
         # 保存检测结果
         with open(pos_dir / "defects.json", "w") as f:
@@ -120,5 +121,5 @@ if __name__ == "__main__":
     # 测试用例
     executor = PipelineExecutor()
     test_images = [imgs1, imgs2]     # 替换为实际图像数据
-    executor.execute_pipeline(test_images, debug=False)
+    executor.execute_pipeline(test_images, debug=True)
 

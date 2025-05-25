@@ -21,7 +21,7 @@ def run_pmd_single(imgs: List[np.ndarray]) -> Optional[torch.Tensor]:
         后面会改成从preprocess处得到的结果，也需要是np.ndarry
         
     Returns:
-        解包裹后的绝对相位图(CPU Tensor)
+        解包裹后的绝对相位图(GPU Tensor)
     """    
     try:
         if torch.cuda.is_available():
@@ -37,7 +37,7 @@ def run_pmd_single(imgs: List[np.ndarray]) -> Optional[torch.Tensor]:
 
         U = Unwrappedphase()
         absphase = U.get_absphase(wph, series, series1)
-        return absphase.cpu()
+        return absphase
     
     except Exception as e:
         print(f"处理失败: {str(e)}")

@@ -3,14 +3,14 @@ import numpy as np
 import torch
 
 
-def load_model(model):
+def init_model():
     # 在PipelineExecutor.__init__.py中调用，初始化模型加载
-    return model
+    return 
 
 # 对外暴漏的接口
-def run_detect(
-    abs_phases: List[np.ndarray]
-) -> List[List[int]]:
+def run_detect(model,
+    abs_phases: List[torch.Tensor]
+) -> List[List[float]]:
     """调用初始化好的模型，输出[x,y,w,h]这样一个bbox
 
     Args:
@@ -19,7 +19,7 @@ def run_detect(
     Returns:
         网络的检测结果，bbox的中心点坐标及宽和高
     """
-    load_model()
+    # load_model()
     cls = 'crater'
     x = 2.0
     y = 2.0
