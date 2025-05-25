@@ -2,11 +2,16 @@ from typing import List, Union
 import numpy as np
 import torch
 
+
+def load_model(model):
+    # 在PipelineExecutor.__init__.py中调用，初始化模型加载
+    return model
+
 # 对外暴漏的接口
 def run_detect(
     abs_phases: List[np.ndarray]
 ) -> List[List[int]]:
-    """调用检测算法，输出[x,y,w,h]这样一个bbox
+    """调用初始化好的模型，输出[x,y,w,h]这样一个bbox
 
     Args:
         imgs: 两张绝对相位图,存储在一个List中
@@ -14,6 +19,7 @@ def run_detect(
     Returns:
         网络的检测结果，bbox的中心点坐标及宽和高
     """
+    load_model()
     cls = 'crater'
     x = 2.0
     y = 2.0

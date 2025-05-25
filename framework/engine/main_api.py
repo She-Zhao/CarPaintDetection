@@ -22,7 +22,6 @@ class PipelineExecutor:
         self.output_root = Path(__file__).parent.parent / "output"      # framework/output
         self.output_root.mkdir(parents=True, exist_ok=True)
         self._init_algorithm_modules()
-    #     self.detect = self.init_model()
     
     # def init_model(self):
     #     return model
