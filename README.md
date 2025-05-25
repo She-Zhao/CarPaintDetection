@@ -25,9 +25,23 @@ data/                  代码运行用到的数据
 └── main_point.txt     # 机械臂点位
 
 engine/                核心检测算法的代码
-├── pmd/               # 相位算法
-├── yolo/              # 检测算法（计划添加pmd_run.py/detect_run.py）
-└── 成像/              # 成像算法（@郑豪杰）
+├── __init__.py
+├── main_api.py/        # 所有算法的处理接口
+│
+├── pmd/               
+│  ├── __init__.py/          
+│  ├── pmd_api.py      # pmd算法处理接口
+│  └── 其他文件
+│
+├── detect/             
+│  ├── __init__.py/          
+│  ├── detect_api.py    # 检测算法处理接口
+│  └── 其他文件   
+│
+├── preprocess/         
+│  ├── __init__.py/          
+│  ├── preprocess_api.py   # 成像算法处理接口
+│  └── 其他文件
 
 module/                系统运行需要的模块化代码
 ├── Camera.py          # 相机处理
@@ -35,7 +49,10 @@ module/                系统运行需要的模块化代码
 └── Socket.py          # socket通信
 
 output/                # 输出三类图像：
-                       # 1. 原始图 2. 相位图 3. 检测结果
+├── pos1               # 1. 原始图 2.拼接后的图 2. 相位图 3. 检测结果   
+├── pos2            
+└── posn 
+                       
 
 scripts/               # 启动脚本（待优化）
 test/                  # 开发过程中用于测试的文件。
@@ -45,8 +62,10 @@ tools/                 # 开发过程中可能用到的工具类文件。
 
 ## 🧠 2.代码结构基本设计思路
 1. **engine/**  
-   - 核心算法（现有PMD/YOLO），每个子文件夹都是一个算法，
-   - 计划每个文件夹中添加xxx_run.py调用当前目录中的算法，后续算法有改动的时候，只要对run.py文件调整即可
+   - 核心算法（preprocess/pmd/detect），每个子文件夹都是一个算法，
+   - 每个文件夹中包含一个xxx_api.py（下称子级api.py）调用当前目录中的算法，后续算法有改动的时候，只要对该文件调整即可
+   - main_api.py调用各个子级api.py，是整个算法处理的接口。
+   - client.py拍摄完图像后单独开一个线程，调用main_api.py进行处理
    - 后续添加：  
      - 豪杰成像算法  
      - 赵航机械臂规划算法  
@@ -57,12 +76,11 @@ tools/                 # 开发过程中可能用到的工具类文件。
    - 示例：`client.py`调用`pmd_run.py`  
 
 3. **core与engine的协作**  
-   - 算法类执行通过子线程执行。即core中的文件，以模块类方法调用算法执行函数
-   - 示例：pmd算法的处理放置在pmd/pmd_run.py，然后在client.py中直接调pmd_run.py
+   - 算法类执行通过子线程执行。即core中的文件，调用其他模块中的文件执行函数
    - 减少通过文件传输中间变量的过程以及读写类操作
 
 **执行流水线**：  
-`相机采集图像——>成像模块，进行拼接和有效区域提取——>pmd_module，生成相位图——>detect_module，得到检测结果。`
+`相机采集图像——>preprocess_api.py，进行拼接和有效区域提取——>pmd_api.py，生成相位图——>detect_api.py，得到检测结果。`
 
 ## ⚙️ 3.运行
 所有需要运行的文件均放置在core中，包括如下三个文件。
@@ -78,6 +96,14 @@ python core/jiege.py    # 完全未改动
 ```
 
 ## 🔜 4.后续优化
-- client.py与pmd_module的集成优化
-- client.py与成像部分（豪杰）的集成。client.py中拿到相机采集到的图像中。
-- client.py和detect_module的集成，可能需要更新下检测的算法。
+- client.py与preprocess.py（豪杰）的集成
+- 机械臂和上位机通信部分代码，以及在机械臂执行过程中调用相机的测试
+- 双相机时序问题
+
+## ❗关于包导入
+- 不同包之间的相互引用在系统复杂以后很麻烦，同学可以了解下**相对导入**和**绝对导入**这两个概念
+   - 绝对导入： from framework.engine.pmd import xxx
+   - 相对导入： from . import xxx
+- 一般而言：
+包内部调用采用相对导入（但是确保当前文件不会单独执行）
+外部调用采用绝对导入（任何需要单独执行的文件都需采用绝对导入）
