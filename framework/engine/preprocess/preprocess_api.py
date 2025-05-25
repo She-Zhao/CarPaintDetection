@@ -4,17 +4,18 @@ import torch
 
 # 对外暴漏的接口
 def run_preprocess(
-    processed_imgs: List[List[np.ndarray]]
+    raw_imgs: List[List[np.ndarray]]
 ) -> List[np.ndarray]:
     """调用图像拼接算法，待补充
 
     Args:
-        imgs: List[np.ndarray]，相机拍摄的源图像，所以是ndarray，而不是tensor
+        imgs:List[List[np.ndarray]]，每个List[np.ndarray]是相机拍摄的一组原始图像（gc0~sin3）。
     
     Returns:
-        图像拼接的结果，估计是List[np.ndarray]，里面每个np.ndarray是n个相机拼接之后的结果。
+        图像拼接的结果，估计是List[np.ndarray]，里面每个np.ndarray是n个相机拼接之后的结果(一张大图)。
     """
-    return processed_imgs[0]
+    processed_imgs = raw_imgs[0]
+    return processed_imgs
         
 if __name__ == "__main__":
     run_preprocess()
