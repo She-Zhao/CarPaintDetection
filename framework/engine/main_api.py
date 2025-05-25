@@ -56,7 +56,7 @@ class PipelineExecutor:
         abs_phases = self.pmd(processed_imgs)           # abs_phases: [GPU.tensor, GPU.tensor]
         
         # 3. 缺陷检测
-        defects = self.detect(self.model, abs_phases)   # defects: [cls, x, y, w, h, conf]
+        defects = self.detect(self.model, abs_phases)   # defects: [GPU.tensor(n1,6), GPU.tensor(n2,6)] -> [c,x,y,w,h,conf]
         
         return {
             "raw_imgs": raw_imgs,                       # 原始图像
