@@ -6,10 +6,17 @@ from pathlib import Path
 
 
 def init_model():
-    # 在PipelineExecutor.__init__.py中调用，初始化模型加载
-    weights_path = Path(__file__).parent / "weights" / "yolo11s_pmd847.pt"
-    model = YOLO(weights_path)
-    return model
+    """     在PipelineExecutor.__init__.py中调用，初始化模型加载    """
+    # 加载Pytorch模型
+    # weights_path = Path(__file__).parent / "weights" / "yolo11s_pmd847.pt"
+    # model = YOLO(weights_path)
+    # return model
+
+    # 初始化TensorRT引擎模型
+    engine_path = Path(__file__).parent / "weights" / "yolo11s_pmd847_fp32.engine"
+    assert engine_path.exists(), f"Engine file missing at {engine_path}"
+    return YOLO(engine_path)
+    
 
 # 对外暴漏的接口
 def run_detect(model,
@@ -23,27 +30,44 @@ def run_detect(model,
     Returns:
         网络的检测结果，bbox的中心点坐标及宽和高
     """
-    # 堆叠图像并转换为RGB格式（将单通道重复为3通道）并归一化
+    # tensorrt模型
+    # 准备输入（FP32引擎使用float32）
     images = torch.stack([
-        phase.unsqueeze(0).repeat(3, 1, 1)  # [1, H, W] -> [3, H, W]
+        phase.unsqueeze(0).repeat(3, 1, 1) 
         for phase in abs_phases
-    ], dim=0) / 255.0  # [2, 3, H, W] - 包含2张RGB图像的batch
+    ], dim=0).to(torch.float32) / 255.0
 
-    # 推理
-    results = model(images, iou=0.5, conf=0.25, imgsz=images.shape[-2:], device="cuda")
+    # 推理（自动使用TensorRT后端）
+    results = model(images, iou=0.5, conf=0.25, device="cuda")
+
+    # 后处理（与pt模型一致）
+    return [
+        torch.cat([r.boxes.cls.unsqueeze(1), r.boxes.xywhn, r.boxes.conf.unsqueeze(1)], dim=1)
+        for r in results
+    ]
+
+    # Pytorch模型
+    # # 堆叠图像并转换为RGB格式（将单通道重复为3通道）并归一化
+    # images = torch.stack([
+    #     phase.unsqueeze(0).repeat(3, 1, 1)  # [1, H, W] -> [3, H, W]
+    #     for phase in abs_phases
+    # ], dim=0) / 255.0  # [2, 3, H, W] - 包含2张RGB图像的batch
+
+    # # 推理
+    # results = model(images, iou=0.5, conf=0.25, imgsz=images.shape[-2:], device="cuda")
 
     # 处理检测结果
-    output = []
-    for result in results:
-        # 提取检测信息：类别、置信度和归一化边界框
-        detections = torch.cat([
-            result.boxes.cls.unsqueeze(1),    # 类别标签c
-            result.boxes.xywhn,               # 归一化边界框 (x, y, w, h)
-            result.boxes.conf.unsqueeze(1)    # 置信度分数conf
-        ], dim=1)
-        output.append(detections)
+    # output = []
+    # for result in results:
+    #     # 提取检测信息：类别、置信度和归一化边界框
+    #     detections = torch.cat([
+    #         result.boxes.cls.unsqueeze(1),    # 类别标签c
+    #         result.boxes.xywhn,               # 归一化边界框 (x, y, w, h)
+    #         result.boxes.conf.unsqueeze(1)    # 置信度分数conf
+    #     ], dim=1)
+    #     output.append(detections)
         
-    return output
+    # return output
         
 if __name__ == "__main__":
     run_detect()
