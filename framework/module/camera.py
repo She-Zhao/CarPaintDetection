@@ -1,3 +1,16 @@
+"""
+文件: camera.py
+功能: 管理多台Basler GigE相机，实现图像采集与存储
+依赖: pypylon.pylon, cv2, time, os, pathlib.Path
+
+典型用法:
+>>> from module.camera import CameraControl
+>>> def callback(serial):
+...     print(f"相机 {serial} 捕获到新帧")
+>>> cam_ctl = CameraControl(exposure_time=8000, max_frames=10, capture_callback=callback)
+>>> cam_ctl.start_grabbing()
+"""
+
 import os
 import pypylon.pylon as py
 import cv2
@@ -7,10 +20,28 @@ from pathlib import Path
   # 存储图像的命名顺序
 
 class CameraControl :
+    """Basler相机控制器
+    
+    主要功能层级:
+    ├─ 初始化配置: 自动检测相机并设置参数 (_camera_init)
+    ├─ 采集控制: 启动/停止图像流，管理采集流程 (start_grabbing)
+    └─ 存储管理: 按序列号和时间戳保存图像 (_save_images)
+    
+    属性:
+        IMAGE_NAMES (list): 图像文件名前缀列表，按采集顺序命名
+    """
     IMAGE_NAMES= ["zhj","gc0","gc1","gc2","gc3","gc4","sin0","sin1","sin2","sin3"]  # 作为类常量，所有实例共享一个
 
     def __init__(self, exposure_time=8000, height=None, width=None,
                  max_frames=10, capture_callback=None):
+        """初始化相机控制器
+        Args:
+            exposure_time (int): 曝光时间（微秒），默认8000μs
+            height (int): 图像高度像素值，None保持相机默认
+            width (int): 图像宽度像素值，None保持相机默认 
+            max_frames (int): 单次采集最大帧数，默认10帧
+            capture_callback (function): 图像捕获回调函数，接收serial参数
+        """        
         self.exposure_time = exposure_time
         self.height = height
         self.width = width
@@ -19,6 +50,11 @@ class CameraControl :
         self._camera_init()
 
     def _camera_init(self):
+        """初始化相机硬件连接
+        Raises:
+            RuntimeError: 未检测到可用相机时抛出
+            py.GenericException: Pylon底层错误时抛出
+        """        
         try:
             tlf = py.TlFactory.GetInstance()
             di = py.DeviceInfo()
@@ -33,7 +69,7 @@ class CameraControl :
             print(f"发现 {num_cameras} 台相机")
 
             self.cam_array = py.InstantCameraArray(num_cameras)
-            self.img_buffers = {}
+            self.img_buffers = {}           # {serial:[imgs_list]}
 
             # 绑定并初始化相机
             for idx, cam in enumerate(self.cam_array):
@@ -56,6 +92,20 @@ class CameraControl :
             print(f"Pylon错误: {e}")
 
     def start_grabbing(self):
+        """启动多相机同步采集流程
+        
+        工作流程:
+        1. 启动相机采集流
+        2. 循环获取图像直到达到max_frames
+        3. 触发回调并自动保存图像
+        4. 超时5秒未收到图像则中断
+        
+        return:
+            [相机1采集的一组图像，相机2采集的一组图像]
+            
+        Raises:
+            py.TimeoutException: 图像采集超时时抛出
+        """        
         try:
             self.cam_array.StartGrabbing(py.GrabStrategy_LatestImageOnly)
             # 两个相机从调用StartGrabbing到可以拍照需要时间，不加延时的话其中一个相机准备好了会先拍照导致时许对不上
@@ -81,14 +131,22 @@ class CameraControl :
 
                 finally:
                     res.Release()
-            self._save_images()
+            # self._save_images()
 
         except py.TimeoutException:
             print("采集超时，请检查相机连接")
         finally:
             self.cam_array.StopGrabbing()
+            
+        return list(self.img_buffers.values())
 
     def _save_images(self):
+        """保存缓冲图像到output目录
+        
+        存储路径结构:
+        framework/output/[相机序列号]/pos[序号]/[IMAGE_NAMES].png
+        例如: output/123456/pos0/zhj.png
+        """        
         for serial, imgs in self.img_buffers.items():
             base_dir = Path(__file__).resolve().parent.parent            # 当前文件的上上一级，framework文件夹 
             root_dir = os.path.join(base_dir, "output", str(serial))     # framework/output/相机序列号

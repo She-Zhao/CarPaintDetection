@@ -1,14 +1,52 @@
+"""
+文件: Host.py
+功能: 主机控制系统，负责管理投影仪和从机通信
+依赖: 
+- screeninfo (获取显示器信息)
+- numpy (图像数据处理)
+- opencv-python (图像显示和读取)
+- socket (网络通信)
+- atexit (程序退出时自动清理)
+
+典型用法:
+>>> host = HostControl('./projection_images/')
+>>> host.Socket_init()  # 初始化从机连接
+>>> host.Take_photo()   # 执行拍照流程
+"""
+
 import screeninfo
 import numpy as np
 import os
 import socket
 import cv2
 import time
-from concurrent.futures import ThreadPoolExecutor
 import atexit
 
-class Host():
+class HostControl():
+    """主机控制核心类，负责协调投影仪和从机相机
+    
+    主要功能层级:
+    ├─ 初始化系统:
+    │    ├─ 加载投影图像 (Projected_init)
+    │    └─ 建立从机连接 (Socket_init)
+    ├─ 核心操作:
+    │    ├─ 控制拍照流程 (Take_photo)
+    │    ├─ 安全数据发送 (_safe_send)
+    │    └─ 安全数据接收 (_safe_recv)
+    └─ 系统清理:
+         └─ 自动资源释放 (Disconnect)
+
+    核心特性:
+    - 自动全屏投影图像序列
+    - 带重试机制的从机连接
+    - 严格的通信协议验证
+    - 异常安全的资源管理
+    """    
     def __init__(self,folder_path):
+        """初始化主机控制器
+        Args:
+            folder_path (str): 投影图像目录路径，要求图像按数字命名(如1.png, 2.png)
+        """        
         self.folder_path = folder_path
         self.server_host_1 = '10.18.18.11' #'从机IP地址四个从机可以输入四个'
         self.server_port = 4096  # 从机监听的端口号
@@ -20,6 +58,16 @@ class Host():
 
         
     def Projected_init(self):
+        """初始化投影系统
+        Returns:
+            np.ndarray: 加载的灰度图像序列，形状为(N,H,W)
+            其中N为图像数量，H为高度，W为宽度
+            
+        工作流程:
+        1. 从目录加载按数字排序的灰度图像
+        2. 配置全屏投影窗口
+        3. 显示首帧图像完成初始化
+        """        
         img = []
         files = os.listdir(self.folder_path)
         files = sorted(files, key=lambda x: int(x.split('.')[0]))
@@ -47,6 +95,14 @@ class Host():
     
     
     def Socket_init(self, max_retries=3, retry_interval=2):
+        """初始化从机Socket连接
+        Args:
+            max_retries (int): 最大重试次数，默认3次
+            retry_interval (int): 重试间隔(秒)，默认2秒
+            
+        Raises:
+            RuntimeError: 超过重试次数仍未连接成功时抛出
+        """        
         retries = 0
         while retries < max_retries:
             try:
@@ -63,6 +119,15 @@ class Host():
         raise RuntimeError("无法连接到从机")
         
     def Take_photo(self):
+        """执行完整的拍照流程
+        协议流程:
+        1. 投影图像切换 (500ms间隔)
+        2. 发送拍照指令 (capture_order)
+        3. 验证从机响应 (必须为switch_pattern)
+        
+        Raises:
+            RuntimeError: 协议验证失败时抛出
+        """        
         for j in range(self.image_nums):
             cv2.imshow('projector', self.image[j])
             k = cv2.waitKey(500)
@@ -79,12 +144,26 @@ class Host():
         self._safe_send('capture_order')
 
     def _safe_send(self, message):
+        """(内部方法)安全发送指令
+        Args:
+            message (str): UTF-8编码的指令字符串
+            
+        Raises:
+            RuntimeError: 连接异常时抛出
+        """        
         try:
             self.client_socket_1.sendall(message.encode('utf-8'))
         except (BrokenPipeError, ConnectionResetError) as e:
             raise RuntimeError("连接已中断") from e
 
     def _safe_recv(self):
+        """(内部方法)安全接收响应
+        Returns:
+            str: 从机返回的UTF-8解码字符串
+            
+        Raises:
+            RuntimeError: 接收超时或连接中断时抛出
+        """        
         try:
             data = self.client_socket_1.recv(1024)
             if not data:
@@ -94,6 +173,14 @@ class Host():
             raise RuntimeError("等待响应超时")
 
     def Disconnect(self):
+        """安全释放所有资源
+        清理顺序:
+        1. 关闭Socket连接
+        2. 销毁OpenCV窗口
+        3. 重置连接状态标志
+        
+        注意: 通过atexit自动调用，无需手动执行
+        """        
         try:
             # 添加socket状态判断
             if hasattr(self, 'client_socket_1') and self.client_socket_1:
