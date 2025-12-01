@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import json
 from importlib import import_module
-import cv2
+import cv2  
 import os
 # from preprocess.run import run_preprocess
 # from pmd.run import run_pmd
@@ -29,9 +29,10 @@ class PipelineExecutor:
 
     def _init_algorithm_modules(self):
         """动态加载算法模块（保持扩展性）"""
-        self.preprocess = import_module("framework.engine.preprocess.preprocess_api").run_preprocess
+        preprocess_module = import_module("framework.engine.preprocess.preprocess_api")
         self.pmd = import_module("framework.engine.pmd.pmd_api").run_pmd
         self.detect = import_module("framework.engine.detect.detect_api").run_detect
+        self.preprocess_module = preprocess_module.Processor()
 
     def execute_pipeline(self, raw_imgs, debug=False):
         """主入口：支持调试模式
@@ -111,8 +112,8 @@ class PipelineExecutor:
         return new_dir
 
 if __name__ == "__main__":
-    datapath1 = r'D:\Project\_New_System\test\pos1'
-    datapath2 = r'D:\Project\_New_System\test\pos2'
+    datapath1 = r'D:\Github\_New_System\test\pos1'
+    datapath2 = r'D:\Github\_New_System\test\pos2'
     imgs1 = [cv2.imread(os.path.join(datapath1, img), cv2.IMREAD_GRAYSCALE) 
                 for img in sorted(os.listdir(datapath1))]
     imgs2 = [cv2.imread(os.path.join(datapath2, img), cv2.IMREAD_GRAYSCALE) 
@@ -122,4 +123,3 @@ if __name__ == "__main__":
     executor = PipelineExecutor()
     test_images = [imgs1, imgs2]     # 替换为实际图像数据
     executor.execute_pipeline(test_images, debug=True)
-

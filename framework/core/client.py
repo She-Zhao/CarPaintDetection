@@ -11,15 +11,9 @@
 """
 # -*-coding:utf-8 -*-
 import time
-import sys
 from pathlib import Path
-
-current_file = Path(__file__).resolve()
-framework_root = current_file.parent.parent
-sys.path.insert(0, str(framework_root))
-
-from module import SocketServer, CameraControl
 import argparse
+from framework.module import SocketServer, CameraControl
 from framework.engine.main_api import PipelineExecutor
 
 class CaptureTracker:

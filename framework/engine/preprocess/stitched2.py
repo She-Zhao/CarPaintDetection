@@ -1,35 +1,6 @@
 import cv2
 import numpy as np
 
-def calculate_homography(K_left, K_right, R, T):
-    """
-    通过双目相机的内外参计算单应性矩阵
-
-    参数:
-    K_left (ndarray): 左相机的内参矩阵 (3x3)
-    K_right (ndarray): 右相机的内参矩阵 (3x3)
-    R (ndarray): 旋转矩阵 (3x3)
-    T (ndarray): 平移向量 (3x1)
-
-    返回:
-    H (ndarray): 右相机到左相机的单应性矩阵 (3x3)
-    """
-
-    # 计算左相机到右相机的变换矩阵
-    R1 = np.dot(K_left, np.dot(R, np.linalg.inv(K_right)))
-
-    # 计算平移部分
-    T1 = np.dot(K_left, T)
-
-    # 构建单应性矩阵 H
-    H = np.zeros((3, 3))
-    H[:2, :2] = R1[:2, :2]  # 旋转矩阵部分
-    H[:2, 2] = T1[:2, 0]    # 平移部分
-    H[2, 2] = 1
-
-    return H
-
-
 def stitch_images(img_left, img_right, H):
     """
     使用单应性矩阵将左右图像拼接在一起

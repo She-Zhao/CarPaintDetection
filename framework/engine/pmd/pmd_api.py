@@ -32,7 +32,7 @@ def run_pmd_single(imgs: List[np.ndarray]) -> Optional[torch.Tensor]:
         W = WrappedPhase(imgs=imgs)
         wph = W.computeWrappedphase()
 
-        B = Binarization(imgs=imgs) 
+        B = Binarization(imgs=imgs, th1=th1, th2=th2, th3=th3, th4=th4, th5=th5) 
         series, series1 = B.get_series()
 
         U = Unwrappedphase()

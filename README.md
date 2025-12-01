@@ -16,32 +16,41 @@
 **framework文件夹结构**：
 ```
 core/              实际运行时的核心代码
-├── client.py    → 原slave.py（从机启动）
-├── server.py    → 原host.py（主机启动）
+├── offline/
+│  ├── calibration.py      # 计算单应性矩阵脚本
+│  ├── Genetic_main.py     # 遗传算法计算格雷码二值化参数脚本
+│  └── 其他离线处理脚本（待补充）
+|
+├── client.py    # 从机启动脚本（原slave.py）
+├── server.py    # 主机启动脚本（原host.py）
 └── jiege.py     # 机械臂启动
 
 data/                  代码运行用到的数据
 ├── patterns/          # 投影图像
-└── main_point.txt     # 机械臂点位
+├── param.json         # 相机Homography矩阵、格雷码二值化参数
+└── main_point.txt     # 存储机械臂点位
 
 engine/                核心检测算法的代码
 ├── __init__.py
 ├── main_api.py/        # 所有算法的处理接口
 │
-├── pmd/               
-│  ├── __init__.py/          
-│  ├── pmd_api.py      # pmd算法处理接口
-│  └── 其他文件
-│
-├── detect/             
-│  ├── __init__.py/          
-│  ├── detect_api.py    # 检测算法处理接口
-│  └── 其他文件   
-│
 ├── preprocess/         
 │  ├── __init__.py/          
 │  ├── preprocess_api.py   # 成像算法处理接口
 │  └── 其他文件
+│
+├── pmd/               
+│  ├── __init__.py/          
+│  ├── pmd_api.py                # pmd算法处理接口
+│  ├── wrapped_phase.py         
+│  ├── gc_binarization.py       
+│  ├── unwrapped_phase.py       
+│  └── wrapped_phase.py   
+|
+├── detect/             
+│  ├── __init__.py/          
+│  ├── detect_api.py    # 检测算法处理接口
+│  └── 其他文件   
 
 module/                系统运行需要的模块化代码
 ├── Camera.py          # 相机处理
@@ -95,10 +104,14 @@ python core/server.py   # 原host.py
 python core/jiege.py    # 完全未改动
 ```
 
-## 🔜 4.后续优化
+## 🔜 4.TODO
 - client.py与preprocess.py（豪杰）的集成
 - 机械臂和上位机通信部分代码，以及在机械臂执行过程中调用相机的测试
 - 双相机时序问题
+
+## 🚧 框架重构任务
+- [ ] `engine/pmd/pmd_api.py`                - 支持从param.json中加载二值化参数
+- [ ] `engine/preprocess/preprocess_api.py`  - 支持从param.json中加载单应性矩阵
 
 ## ❗关于包导入
 - 不同包之间的相互引用在系统复杂以后很麻烦，同学可以了解下**相对导入**和**绝对导入**这两个概念
