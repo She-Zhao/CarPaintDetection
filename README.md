@@ -112,8 +112,10 @@ python core/jiege.py    # 完全未改动
 ## 🚧 框架重构任务
 - [ ] `engine/preprocess/stitched2.py`       - 函数输入修改 @郑豪杰
 ![image](/assets/stitched2.png)
-- [ ] `engine/pmd/pmd_api.py`                - 支持从param.json中加载二值化参数
-- [ ] `engine/preprocess/preprocess_api.py`  - 支持从param.json中加载单应性矩阵
+- [✔]  `engine/pmd/pmd_api.py`                - 支持从config.json中加载二值化参数 @赵射
+- [✔] `engine/preprocess/preprocess_api.py`  - 支持从config.json中加载单应性矩阵 @赵射
+- [✔] `engine/main_api.py/PipelineExecutor`  - 在这里初始化的时候就将所有配置参数加载进去 @赵射
+- [✔] `engine/detect/detect_api.py`  - 是否有优化的算法、模型部署及部署后的调用 @赵射 @刘佳璇
 
 ## ❗关于包导入
 - 不同包之间的相互引用在系统复杂以后很麻烦，同学可以了解下**相对导入**和**绝对导入**这两个概念

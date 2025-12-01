@@ -77,7 +77,7 @@ def create_camera_with_callback(server, exposure=8000, max_frames=10):
                 print(f"收到主机拍照指令 {next_order}")
                 break            
     
-    return CameraControl (
+    return CameraControl(
         exposure_time=exposure,
         max_frames=max_frames,
         capture_callback=_capture_callback

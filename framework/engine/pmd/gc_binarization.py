@@ -48,11 +48,7 @@ class Binarization():
         self,
         datapath: str = None,
         imgs: List[np.ndarray] = None,  # 或者 Tuple[np.ndarray, ...]
-        th1: float = 1.0,
-        th2: float = 1.0,
-        th3: float = 1.0,
-        th4: float = 1.0,
-        th5: float = 1.0,
+        thresholds: List[float] = None
     ):
         """初始化格雷码处理器
         Args:
@@ -62,11 +58,7 @@ class Binarization():
         """        
         self.datapath = datapath
         self.imgs = imgs if imgs is not None else imgs
-        self.th1 = th1
-        self.th2 = th2
-        self.th3 = th3
-        self.th4 = th4
-        self.th5 = th5
+        self.th1, self.th2, self.th3, self.th4, self.th5 = thresholds
         self.n = 5
         self._binary_done = False
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

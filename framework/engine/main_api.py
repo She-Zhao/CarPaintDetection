@@ -7,6 +7,7 @@ from importlib import import_module
 import cv2  
 import os
 from framework.engine.preprocess.preprocess_api import Preprocessor
+from framework.engine.pmd.pmd_api import PMDprocessor
 
 IMAGE_NAMES = ["gc0", "gc1", "gc2", "gc3", "gc4", "sin0", "sin1", "sin2", "sin3"]
 
@@ -22,15 +23,21 @@ class PipelineExecutor:
         self._init_algorithm_modules()
         self.model = import_module("framework.engine.detect.detect_api").init_model
         
-    # def init_model(self):
-    #     return model
+        self.pos_idx = 0
+        self.config_data = self._load_config()
+        self.H_matrix = self.config_data['H_matrix']
+        self.th_list = self.config_data['binarization_th_list']
 
+    def _load_config(self):
+        """加载单应性矩阵"""
+        with open('framework/data/config.json') as f:
+            return json.load(f)
+        
     def _init_algorithm_modules(self):
         """动态加载算法模块（保持扩展性）"""
         self.preprocess = Preprocessor()
-        self.pmd = import_module("framework.engine.pmd.pmd_api").run_pmd
+        self.pmd = PMDprocessor()
         self.detect = import_module("framework.engine.detect.detect_api").run_detect
-        # self.preprocess = preprocess_module.Preprocessor()
 
     def execute_pipeline(self, raw_imgs, debug=False):
         """主入口：支持调试模式
@@ -49,15 +56,16 @@ class PipelineExecutor:
     def _execute_pipeline(self, raw_imgs):           # List[List[np.ndarray]]
         """顺序执行处理链"""
         # 1. 图像预处理（拼接、有效区域提取等）
-        processed_imgs = self.preprocess(raw_imgs)      # processed_imgs: List[np.ndarray]
+        processed_imgs = self.preprocess(raw_imgs, self.H_matrix)      # processed_imgs: List[np.ndarray]
         
-        import pdb; pdb.set_trace()
         # 2. PMD相位计算（假设输入为双图）
-        abs_phases = self.pmd(processed_imgs)           # abs_phases: [GPU.tensor, GPU.tensor]
+        abs_phases = self.pmd(processed_imgs, self.th_list[f'pos{self.pos_idx}'])           # abs_phases: [GPU.tensor, GPU.tensor]
         
         # 3. 缺陷检测
         # defects = self.detect(self.model, abs_phases)   # defects: [GPU.tensor(n1,6), GPU.tensor(n2,6)] -> [c,x,y,w,h,conf]
         
+        # 更新当前点位
+        self.pos_idx += 1
         return {
             "raw_imgs": raw_imgs,                       # 原始图像
             "processed_img": processed_imgs,            # 预处理结果
@@ -109,16 +117,3 @@ class PipelineExecutor:
         new_dir = self.output_root / f"pos{new_num}"
         new_dir.mkdir(parents=True, exist_ok=True)
         return new_dir
-
-if __name__ == "__main__":
-    datapath1 = r'D:\Github\_New_System\test\pos1'
-    datapath2 = r'D:\Github\_New_System\test\pos2'
-    imgs1 = [cv2.imread(os.path.join(datapath1, img), cv2.IMREAD_GRAYSCALE) 
-                for img in sorted(os.listdir(datapath1))]
-    imgs2 = [cv2.imread(os.path.join(datapath2, img), cv2.IMREAD_GRAYSCALE) 
-                for img in sorted(os.listdir(datapath2))] 
-    
-    # 测试用例
-    executor = PipelineExecutor()
-    test_images = [imgs1, imgs2]     # 替换为实际图像数据
-    executor.execute_pipeline(test_images, debug=True)

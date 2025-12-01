@@ -5,19 +5,19 @@ import json
 
 class Preprocessor:
     """图像预处理器"""
-    def __init__(self):
-        self.H_matrix = self._load_H_matrix()
+    # def __init__(self):
+    #     self.H_matrix = self._load_H_matrix()
 
-    def _load_H_matrix(self):
-        """加载单应性矩阵"""
-        with open('framework/data/param.json') as f:
-            param = json.load(f)
-            H_matrix = param['H_matrix']
-        print(f"🚀单应性矩阵加载成功! H = \n{H_matrix}")
+    # def _load_H_matrix(self):
+    #     """加载单应性矩阵"""
+    #     with open('framework/data/param.json') as f:
+    #         param = json.load(f)
+    #         H_matrix = param['H_matrix']
+    #     print(f"🚀单应性矩阵加载成功! H = \n{H_matrix}")
         
-        return np.array(H_matrix, dtype=np.float32)
+    #     return np.array(H_matrix, dtype=np.float32)
 
-    def __call__(self, raw_imgs: List[List[np.ndarray]]) -> List[np.ndarray]:
+    def __call__(self, raw_imgs: List[List[np.ndarray]], H_matrix: np.ndarray) -> List[np.ndarray]:
         """调用图像拼接算法，待补充
 
         Args:
@@ -26,6 +26,6 @@ class Preprocessor:
         Returns:
             图像拼接的结果，估计是List[np.ndarray]，里面每个np.ndarray是n个相机拼接之后的结果(一张大图)。
         """
-        # stitched_img = stitch_images(raw_imgs[0], raw_imgs[1], self.H_matrix)     # raw_imgs第一个idx对应相机,第二个idx对应第几个图像
+        # stitched_img = stitch_images(raw_imgs[0], raw_imgs[1], H_matrix)     # raw_imgs第一个idx对应相机,第二个idx对应第几个图像
         # processed_imgs = stitched_img
         return raw_imgs[0]
