@@ -110,6 +110,8 @@ python core/jiege.py    # 完全未改动
 - 双相机时序问题
 
 ## 🚧 框架重构任务
+- [ ] `engine/preprocess/stitched2.py`       - 函数输入修改 @郑豪杰
+![image](/assets/stitched2.png)
 - [ ] `engine/pmd/pmd_api.py`                - 支持从param.json中加载二值化参数
 - [ ] `engine/preprocess/preprocess_api.py`  - 支持从param.json中加载单应性矩阵
 

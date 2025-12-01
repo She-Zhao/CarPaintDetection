@@ -6,9 +6,7 @@ import json
 from importlib import import_module
 import cv2  
 import os
-# from preprocess.run import run_preprocess
-# from pmd.run import run_pmd
-# from yolo.run import run_detect
+from framework.engine.preprocess.preprocess_api import Preprocessor
 
 IMAGE_NAMES = ["gc0", "gc1", "gc2", "gc3", "gc4", "sin0", "sin1", "sin2", "sin3"]
 
@@ -29,10 +27,10 @@ class PipelineExecutor:
 
     def _init_algorithm_modules(self):
         """动态加载算法模块（保持扩展性）"""
-        preprocess_module = import_module("framework.engine.preprocess.preprocess_api")
+        self.preprocess = Preprocessor()
         self.pmd = import_module("framework.engine.pmd.pmd_api").run_pmd
         self.detect = import_module("framework.engine.detect.detect_api").run_detect
-        self.preprocess_module = preprocess_module.Processor()
+        # self.preprocess = preprocess_module.Preprocessor()
 
     def execute_pipeline(self, raw_imgs, debug=False):
         """主入口：支持调试模式
@@ -51,19 +49,20 @@ class PipelineExecutor:
     def _execute_pipeline(self, raw_imgs):           # List[List[np.ndarray]]
         """顺序执行处理链"""
         # 1. 图像预处理（拼接、有效区域提取等）
-        processed_imgs = self.preprocess(raw_imgs)      # processed_imgs:未知，豪杰还没做。预计np.ndarray
+        processed_imgs = self.preprocess(raw_imgs)      # processed_imgs: List[np.ndarray]
         
+        import pdb; pdb.set_trace()
         # 2. PMD相位计算（假设输入为双图）
         abs_phases = self.pmd(processed_imgs)           # abs_phases: [GPU.tensor, GPU.tensor]
         
         # 3. 缺陷检测
-        defects = self.detect(self.model, abs_phases)   # defects: [GPU.tensor(n1,6), GPU.tensor(n2,6)] -> [c,x,y,w,h,conf]
+        # defects = self.detect(self.model, abs_phases)   # defects: [GPU.tensor(n1,6), GPU.tensor(n2,6)] -> [c,x,y,w,h,conf]
         
         return {
             "raw_imgs": raw_imgs,                       # 原始图像
             "processed_img": processed_imgs,            # 预处理结果
             "abs_phase": abs_phases,                    # 相位计算结果
-            "defects": defects,                         # 缺陷检测结果
+            # "defects": defects,                       # 缺陷检测结果
         }
 
     def _result_callback(self, future):
