@@ -6,8 +6,8 @@
 2. IO操作与算法处理叠加，资源浪费严重  
 3. 启动程序繁琐，复现困难  
 4. 缺少异常处理，调试困难  
-- 整体流程：
-![系统流程](/assets/system_architecture.svg)
+
+##### ⚡ **核心工作流程**
 
 ```mermaid
 flowchart TD
