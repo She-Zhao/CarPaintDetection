@@ -42,7 +42,7 @@ class PMDprocessor:
         except Exception as e:
             print(f"处理失败: {str(e)}")
                
-    def _process_multi(self, imgs_list: List[List[np.ndarray]]) -> List[Optional[torch.tensor]]:
+    def _process_multi(self, imgs_list: List[List[np.ndarray]]) -> List[Optional[torch.Tensor]]:
         if torch.cuda.is_available():
             with multiprocessing.Pool(processes=2) as pool:         # GPU任务使用进程池（避免GIL限制）
                 return pool.map(self._process_single, imgs_list)

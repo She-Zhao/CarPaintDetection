@@ -48,7 +48,7 @@ class Unwrappedphase():
             series1: 补偿级次图，GPU张量.与series均在二值化文件中进行计算。
 
         Returns:
-            torch.Tensor: 绝对相位场(无范围限制)，设备同输入
+            torch.Tensor: 绝对相位图(无范围限制)，设备同输入
         """
 
         unwrapped_pha = torch.zeros_like(series, dtype=torch.float32, device=self.device)

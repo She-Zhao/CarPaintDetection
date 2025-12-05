@@ -2,8 +2,9 @@
 import cv2
 import os
 from framework.engine.main_api import PipelineExecutor
+import time
 
-if __name__ == "__main__":
+def test():
     datapath1 = r'D:\Github\_New_System\test\pos1'
     datapath2 = r'D:\Github\_New_System\test\pos2'
     imgs1 = [cv2.imread(os.path.join(datapath1, img), cv2.IMREAD_GRAYSCALE).squeeze() 
@@ -14,4 +15,10 @@ if __name__ == "__main__":
     # 测试用例
     executor = PipelineExecutor()
     test_images = [imgs1, imgs2]     # 替换为实际图像数据
-    executor.execute_pipeline(test_images, debug=True)
+    for _ in range(10):
+        print(123)
+        executor.execute_pipeline(test_images, debug=True)
+        time.sleep(0.5)
+
+if __name__ == "__main__":
+    test()

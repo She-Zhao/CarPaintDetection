@@ -112,11 +112,22 @@ python core/jiege.py    # 完全未改动
 ## 🚧 框架重构任务
 - [ ] `engine/preprocess/stitched2.py`       - 函数输入修改 @郑豪杰
 ![image](/assets/stitched2.png)
-- [✔]  `engine/pmd/pmd_api.py`                - 支持从config.json中加载二值化参数 @赵射
-- [✔] `engine/preprocess/preprocess_api.py`  - 支持从config.json中加载单应性矩阵 @赵射
-- [✔] `engine/main_api.py/PipelineExecutor`  - 在这里初始化的时候就将所有配置参数加载进去 @赵射
-- [✔] `engine/detect/detect_api.py`  - 是否有优化的算法、模型部署及部署后的调用 @赵射 @刘佳璇
-
+- [x]  `engine/pmd/pmd_api.py`               - 支持从config.json中加载二值化参数 @赵射
+- [x] `engine/preprocess/preprocess_api.py`  - 支持从config.json中加载单应性矩阵 @赵射
+- [x] `engine/main_api.py/PipelineExecutor`  - 在这里初始化的时候就将所有配置参数加载进去 @赵射
+- [x] `engine/detect/detect_api.py`          - 封装检测算法调用接口
+   - [x] 为了保证PMD的处理结果直接连到YOLO的输入上，需要自己实现一个GPU版本的LetterBox，对输入图像的尺寸进行resize
+   - [x] 支持List[torch.Tensor]的输入
+   - [x] 对torch.Tensor、List[torch.Tensor]、np.ndarray三种数据类型的输入进行接口的统一
+- [ ] `engine/detect/detect_api.py`          - 支持参数配置、模型选择
+   - [ ] `engine/detect/detect_api.py`          - 支持从外部yaml文件读取配置
+   - [ ] `engine/detect/detect_api.py`          - 支持多种模型的选择 @赵射
+   - [ ] `engine/detect/detect_api.py`          - 提供新检测模型算法代码及权重 @刘佳璇
+- [ ] `engine/detect/detect_api.py`          - 模型部署
+   - [ ] `engine/detect/detect_api.py`          - YOLO模型部署，重点是跟PMD衔接上，以及输入模型的尺寸 @郑豪杰
+- [ ] - 机械臂通信及轨迹规划 @赵航 @李志翀
+- [ ] `module/camera.py`                     - 双相机异步触发 @赵射
+ 
 ## ❗关于包导入
 - 不同包之间的相互引用在系统复杂以后很麻烦，同学可以了解下**相对导入**和**绝对导入**这两个概念
    - 绝对导入： from framework.engine.pmd import xxx
