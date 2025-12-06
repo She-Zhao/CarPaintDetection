@@ -177,11 +177,8 @@ python core/jiege.py    # 完全未改动
 ```
 
 ## 🔜 4.TODO
-- client.py与preprocess.py（豪杰）的集成
-- 机械臂和上位机通信部分代码，以及在机械臂执行过程中调用相机的测试
-- 双相机时序问题
 
-## 🚧 框架重构任务
+### 🚧 框架重构任务
 - [x] `engine/pmd/pmd_api.py`                - 支持从config.json中加载二值化参数 @赵射
 - [x] `engine/preprocess/preprocess_api.py`  - 支持从config.json中加载单应性矩阵 @赵射
 - [x] `engine/main_api.py/PipelineExecutor`  - 在这里初始化的时候就将所有配置参数加载进去 @赵射
