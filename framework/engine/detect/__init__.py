@@ -1,3 +1,3 @@
-from .detect_api import run_detect
+from .detect_api import Detectprocessor
 
-__all__ = ["run_detect"]
+__all__ = ["Detectprocessor"]

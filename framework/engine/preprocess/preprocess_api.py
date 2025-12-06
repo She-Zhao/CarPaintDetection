@@ -5,17 +5,6 @@ import json
 
 class Preprocessor:
     """图像预处理器"""
-    # def __init__(self):
-    #     self.H_matrix = self._load_H_matrix()
-
-    # def _load_H_matrix(self):
-    #     """加载单应性矩阵"""
-    #     with open('framework/data/param.json') as f:
-    #         param = json.load(f)
-    #         H_matrix = param['H_matrix']
-    #     print(f"🚀单应性矩阵加载成功! H = \n{H_matrix}")
-        
-    #     return np.array(H_matrix, dtype=np.float32)
 
     def __call__(self, raw_imgs: List[List[np.ndarray]], H_matrix: np.ndarray) -> List[np.ndarray]:
         """调用图像拼接算法，待补充

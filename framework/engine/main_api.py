@@ -9,35 +9,37 @@ import os
 from framework.engine.preprocess.preprocess_api import Preprocessor
 from framework.engine.pmd.pmd_api import PMDprocessor
 from framework.engine.detect.detect_api import Detectprocessor
+from framework.module import ModelConfigManager
 IMAGE_NAMES = ["gc0", "gc1", "gc2", "gc3", "gc4", "sin0", "sin1", "sin2", "sin3"]
 
 class PipelineExecutor:
-    # 说明：这里采用ThreadPoolExecutor，是因为ThreadPoolExecutor 内置"异步执行+自动队列​"​
-    # ​​max_workers 仅控制并行度
+    """算法pipeline执行器
+    采用ThreadPoolExecutor, 因为ThreadPoolExecutor 内置"异步执行+自动队列​"​, 可以省区很多麻烦
     # 异步执行含义：前面拍完照，调用PipelineExecutor，会将任务放在单独一个线程执行，然后立刻回到拍照中
     # 自动队列：即使前面没处理完，来了新照片，会自动进入缓存队列，当前面执行完了再执行当前任务
-    def __init__(self):
+    Returns:
+        _type_: _description_
+    """
+    # 说明：这里
+    def __init__(self, config: ModelConfigManager):
+        """_summary_
+
+        Args:
+            config (ModelConfigManager): 模型的配置
+        """
         self.executor = ThreadPoolExecutor(max_workers=1)       # 重要！新任务会自动排队等待，严格保持先进先出（FIFO）顺序
         self.output_root = Path(__file__).parent.parent / "output"      # framework/output
         self.output_root.mkdir(parents=True, exist_ok=True)
+        self.cfg = config
         self._init_algorithm_modules()
-        # self.model = import_module("framework.engine.detect.detect_api").init_model
-
         self.pos_idx = 0
-        self.param_data = self._load_param()
-        self.H_matrix = self.param_data['H_matrix']
-        self.th_list = self.param_data['binarization_th_list']
-
-    def _load_param(self):
-        """加载单应性矩阵"""
-        with open('framework/data/param.json') as f:
-            return json.load(f)
         
+
     def _init_algorithm_modules(self):
         """动态加载算法模块（保持扩展性）"""
         self.preprocess = Preprocessor()
         self.pmd = PMDprocessor()
-        self.detect = Detectprocessor()
+        self.detect = Detectprocessor(**self.cfg.config['detect'])
 
     def execute_pipeline(self, raw_imgs, debug=False):
         """主入口：支持调试模式
@@ -56,10 +58,10 @@ class PipelineExecutor:
     def _execute_pipeline(self, raw_imgs):           # List[List[np.ndarray]]
         """顺序执行处理链"""
         # 1. 图像预处理（拼接、有效区域提取等）
-        processed_imgs = self.preprocess(raw_imgs, self.H_matrix)      # processed_imgs: List[np.ndarray]
+        processed_imgs = self.preprocess(raw_imgs, self.cfg.param['H_matrix'])      # processed_imgs: List[np.ndarray]
         
         # 2. PMD相位计算（假设输入为双图）
-        abs_phases = self.pmd(processed_imgs, self.th_list[f'pos{self.pos_idx}'])           # abs_phases: [GPU.tensor, GPU.tensor]
+        abs_phases = self.pmd(processed_imgs, self.cfg.param['th_dict'][f'pos{self.pos_idx}'])           # abs_phases: [GPU.tensor, GPU.tensor]
         
         # 3. 缺陷检测
         defects = self.detect(abs_phases)   # defects: [GPU.tensor(n1,6), GPU.tensor(n2,6)] -> [c,x,y,w,h,conf]

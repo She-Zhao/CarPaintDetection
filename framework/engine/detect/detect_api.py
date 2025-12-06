@@ -7,14 +7,12 @@ import  torch.nn.functional as F
 
 class Detectprocessor:
     """检测处理器"""
-    def __init__(self,
-                 iou_thres: float = 0.5,
-                 conf_thres: float = 0.25,
-                 stride: int = 32):
-        self.iou_thres = iou_thres
-        
-        self.conf_thres = conf_thres
-        self.stride = stride
+    def __init__(self, **kwargs):
+        self.iou_thres = kwargs['iou_thres']
+        self.conf_thres = kwargs['conf_thres']
+        self.stride = kwargs['stride']
+        self.imgsz = kwargs['imgsz']
+        self.model_path = kwargs['all_models'][kwargs['selected_model']]
         self.model = self.init_model()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
@@ -25,7 +23,7 @@ class Detectprocessor:
             YOLO: 检测模型
         """
         # 加载Pytorch模型
-        weights_path = Path(__file__).parent / "weights" / "yolo11s_pmd847.pt"
+        weights_path = Path(__file__).parent / "weights" / self.model_path      # 从framework开始加载
         model = YOLO(weights_path)
         return model
 

@@ -15,6 +15,7 @@ from pathlib import Path
 import argparse
 from framework.module import SocketServer, CameraControl
 from framework.engine.main_api import PipelineExecutor
+from framework.module.model_config import ModelConfigManager
 
 class CaptureTracker:
     """多相机采集状态跟踪器
@@ -100,7 +101,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--delay', type=int, default=1000)
     args = parser.parse_args()
-    executor = PipelineExecutor()       # 引入主流程处理函数，同时初始化检测模型等
+    config = ModelConfigManager()
+    executor = PipelineExecutor(config)       # 引入主流程处理函数，同时初始化检测模型等
     while True:
         try:                 
             with SocketServer(host='10.18.18.11', base_port=4096, retries=5) as server:
