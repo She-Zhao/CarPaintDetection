@@ -28,9 +28,9 @@ class Detectprocessor:
         if self.selected_model == "PMD":
             model = YOLO(weights_path)
         elif self.selected_model == "MPFF":
-            model = 
+            model = ''
         elif self.selected_model == "MSIF":
-            model = 
+            model = ''
         return model
 
         # 初始化TensorRT引擎模型

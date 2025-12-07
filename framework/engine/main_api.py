@@ -85,7 +85,7 @@ class PipelineExecutor:
         
         # 保存原始图像（文件名包含相机编号）
         for cam_idx, cam_imgs in enumerate(result["raw_imgs"], start=1):
-            for img, name in zip(cam_imgs, self.cfg['image_names']):
+            for img, name in zip(cam_imgs, self.cfg.config['pmd']['image_names']):
                 filename = f"cam{cam_idx}_{name}.png"
                 path = pos_dir / filename
                 cv2.imwrite(str(path), img)
