@@ -167,13 +167,13 @@ tools/                 # 开发过程中可能用到的工具类文件。
 所有需要运行的文件均放置在core中，包括如下三个文件。
 ```bash
 # 从机端
-python core/client.py   # 原slave.py
+python framework/core/client.py   # 原slave.py
 
 # 主机端
-python core/server.py   # 原host.py
+python framework/core/server.py   # 原host.py
 
 # 机械臂
-python core/jiege.py    # 完全未改动
+python framework/core/robot.py    # 完全未改动
 ```
 
 ## 🔜 4.TODO
@@ -189,11 +189,14 @@ python core/jiege.py    # 完全未改动
 - [ ] `engine/preprocess/stitched2.py`       - 函数输入修改、有效区域提取代码加入 @郑豪杰
 ![image](/assets/stitched2.png)
 - [ ] `engine/detect/detect_api.py`             - 支持参数配置、模型选择         @赵射
-   - [ ] `engine/detect/detect_api.py`          - 支持从外部yaml文件读取配置     @赵射
-   - [ ] `engine/detect/detect_api.py`          - 支持多模型的选择、新检测模型算法代码及权重  @赵射 @刘佳璇
-- [ ] `engine/detect/detect_api.py`          - 模型部署     
+   - [x] `engine/detect/detect_api.py`          - 支持从外部yaml文件读取配置     @赵射
+   - [x] `engine/detect/detect_api.py`          - 支持多模型的选择              @赵射
+   - [ ] `engine/detect/detect_api.py`          - 新检测模型算法代码及权重, 自建一个类       @刘佳璇
+   - [ ] `engine/detect/detect_api.py`          - 还需要改一下__call__方法，因为不同模型的输入图像不一样，需要跟@刘佳璇对一下新模型的输入形式，最好直接将输入包装成[N, C, H, W]的Tensor
+   ![image](/assets/detect_api.png)
+- [ ] `core/robot.py`                     - 机械臂和上位机（主机）通信，实现上位机给定一个点，机械臂走到相应的位置即可 @赵航 @李志翀   
+- [ ] `engine/detect/detect_api.py`             - 模型部署     
    - [ ] `engine/detect/detect_api.py`          - YOLO模型部署，重点是跟PMD衔接上，以及输入模型的尺寸 @郑豪杰
-- [ ] `core/robot.py`                     - 机械臂和上位机（主机）通信              @赵航 @李志翀
 - [ ] `core/offline`                      - 机械臂轨迹规划算法及二值化遗传算法加入   @郑豪杰 @赵航
 - [ ] `module/camera.py`                     - 双相机异步触发 @赵射
  

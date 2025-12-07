@@ -10,7 +10,6 @@ from framework.engine.pmd.unwrapped_phase import Unwrappedphase
 from typing import List
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import multiprocessing
-from functools import partial
 from typing import List, Union, Optional
 
 class PMDprocessor:

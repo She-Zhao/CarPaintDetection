@@ -1,39 +1,34 @@
 # engine/processor.py
-import argparse
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import List, Dict
+from concurrent.futures import ThreadPoolExecutor
 import json
-from importlib import import_module
 import cv2  
-import os
+import numpy as np
 from framework.engine.preprocess.preprocess_api import Preprocessor
 from framework.engine.pmd.pmd_api import PMDprocessor
 from framework.engine.detect.detect_api import Detectprocessor
 from framework.module import ModelConfigManager
-IMAGE_NAMES = ["gc0", "gc1", "gc2", "gc3", "gc4", "sin0", "sin1", "sin2", "sin3"]
 
 class PipelineExecutor:
     """算法pipeline执行器
-    采用ThreadPoolExecutor, 因为ThreadPoolExecutor 内置"异步执行+自动队列​"​, 可以省区很多麻烦
-    # 异步执行含义：前面拍完照，调用PipelineExecutor，会将任务放在单独一个线程执行，然后立刻回到拍照中
-    # 自动队列：即使前面没处理完，来了新照片，会自动进入缓存队列，当前面执行完了再执行当前任务
-    Returns:
-        _type_: _description_
+    异步执行采用ThreadPoolExecutor, 因为ThreadPoolExecutor 内置"异步执行+自动队列​"​, 可以省略很多麻烦
+    异步执行含义：前面拍完照，调用PipelineExecutor，会将任务放在单独一个线程执行，然后立刻切换到主线程进行下一个任务
+    自动队列：即使前面没处理完，来了新照片，会自动进入缓存队列，当前面执行完了再执行当前任务
     """
     # 说明：这里
     def __init__(self, config: ModelConfigManager):
-        """_summary_
+        """加载预处理、二值化的相关参数，初始化检测模型
 
         Args:
-            config (ModelConfigManager): 模型的配置
+            config (ModelConfigManager): 相关参数和模型的配置
         """
-        self.executor = ThreadPoolExecutor(max_workers=1)       # 重要！新任务会自动排队等待，严格保持先进先出（FIFO）顺序
+        self.executor = ThreadPoolExecutor(max_workers=1)    # 不是为了并行，而是为了新任务会自动排队等待，严格保持先进先出（FIFO）顺序
         self.output_root = Path(__file__).parent.parent / "output"      # framework/output
         self.output_root.mkdir(parents=True, exist_ok=True)
         self.cfg = config
         self._init_algorithm_modules()
         self.pos_idx = 0
-        
 
     def _init_algorithm_modules(self):
         """动态加载算法模块（保持扩展性）"""
@@ -41,9 +36,11 @@ class PipelineExecutor:
         self.pmd = PMDprocessor()
         self.detect = Detectprocessor(**self.cfg.config['detect'])
 
-    def execute_pipeline(self, raw_imgs, debug=False):
-        """主入口：支持调试模式
+    def execute_pipeline(self, raw_imgs:List[List[np.ndarray]], debug=False):
+        """算法执行管线的外部接口
+        
         Args:
+            raw_imgs：两组相机采集的原始图像
             debug: True时同步执行，False时异步执行
         """
         if debug:
@@ -55,12 +52,12 @@ class PipelineExecutor:
             future = self.executor.submit(self._execute_pipeline, raw_imgs)
             future.add_done_callback(self._result_callback)
 
-    def _execute_pipeline(self, raw_imgs):           # List[List[np.ndarray]]
-        """顺序执行处理链"""
+    def _execute_pipeline(self, raw_imgs: List[List[np.ndarray]]) -> Dict:           # List[List[np.ndarray]]
+        """算法执行pipeline"""
         # 1. 图像预处理（拼接、有效区域提取等）
         processed_imgs = self.preprocess(raw_imgs, self.cfg.param['H_matrix'])      # processed_imgs: List[np.ndarray]
         
-        # 2. PMD相位计算（假设输入为双图）
+        # 2. PMD相位计算
         abs_phases = self.pmd(processed_imgs, self.cfg.param['th_dict'][f'pos{self.pos_idx}'])           # abs_phases: [GPU.tensor, GPU.tensor]
         
         # 3. 缺陷检测
@@ -72,7 +69,7 @@ class PipelineExecutor:
             "raw_imgs": raw_imgs,                       # 原始图像
             "processed_img": processed_imgs,            # 预处理结果
             "abs_phase": abs_phases,                    # 相位计算结果
-            "defects": defects,                       # 缺陷检测结果
+            "defects": defects,                         # 缺陷检测结果
         }
 
     def _result_callback(self, future):
@@ -88,7 +85,7 @@ class PipelineExecutor:
         
         # 保存原始图像（文件名包含相机编号）
         for cam_idx, cam_imgs in enumerate(result["raw_imgs"], start=1):
-            for img, name in zip(cam_imgs, IMAGE_NAMES):
+            for img, name in zip(cam_imgs, self.cfg['image_names']):
                 filename = f"cam{cam_idx}_{name}.png"
                 path = pos_dir / filename
                 cv2.imwrite(str(path), img)
@@ -110,7 +107,7 @@ class PipelineExecutor:
         print(f"结果已保存至 {pos_dir}")
 
     def _create_pos_dir(self) -> Path:
-        """创建递增的pos目录（优化版）"""
+        """创建递增的pos目录"""
         # 获取所有以pos开头的目录名中的数字部分
         pos_numbers = [
             int(d.name[3:]) for d in self.output_root.glob("pos*")

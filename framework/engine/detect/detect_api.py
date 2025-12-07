@@ -12,11 +12,12 @@ class Detectprocessor:
         self.conf_thres = kwargs['conf_thres']
         self.stride = kwargs['stride']
         self.imgsz = kwargs['imgsz']
-        self.model_path = kwargs['all_models'][kwargs['selected_model']]
+        self.selected_model = kwargs['selected_model']
+        self.model_path = kwargs['all_models'][self.selected_model]
         self.model = self.init_model()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    def init_model(self) -> YOLO:
+    def init_model(self) -> Union[YOLO,]:
         """初始化模型
 
         Returns:
@@ -24,7 +25,12 @@ class Detectprocessor:
         """
         # 加载Pytorch模型
         weights_path = Path(__file__).parent / "weights" / self.model_path      # 从framework开始加载
-        model = YOLO(weights_path)
+        if self.selected_model == "PMD":
+            model = YOLO(weights_path)
+        elif self.selected_model == "MPFF":
+            model = 
+        elif self.selected_model == "MSIF":
+            model = 
         return model
 
         # 初始化TensorRT引擎模型
