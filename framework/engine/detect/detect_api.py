@@ -14,9 +14,9 @@ class Detectprocessor:
         self.imgsz = kwargs['imgsz']
         self.selected_model = kwargs['selected_model']
         self.model_path = kwargs['all_models'][self.selected_model]
+        self.multi_img = False
         self.model = self.init_model()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.multi_img = False
     
     def init_model(self) -> Union[YOLO,]:
         """初始化模型
