@@ -25,7 +25,8 @@ build-backend = "setuptools.build_meta"
 # Project settings -----------------------------------------------------------------------------------------------------
 [project]
 name = "ultralytics"
-dynamic = ["version"]
+# dynamic = ["version"]
+version = "8.3.161"
 description = "Ultralytics YOLO 🚀 for SOTA object detection, multi-object tracking, instance segmentation, pose estimation and image classification."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -75,7 +76,8 @@ dependencies = [
     "psutil", # system utilization
     "py-cpuinfo", # display CPU info
     "pandas>=1.1.4",
-    "ultralytics-thop>=2.0.0", # FLOPs computation https://github.com/ultralytics/thop
+    "ultralytics-thop>=2.0.0", # FLOPs computation https://github.com/ultralytics/thop,
+    "pytorch_ssim"
 ]
 
 # Optional dependencies ------------------------------------------------------------------------------------------------
@@ -144,8 +146,8 @@ packages = { find = { where = ["."], include = ["ultralytics", "ultralytics.*"] 
 # Tests included below for checking Conda builds in https://github.com/conda-forge/ultralytics-feedstock
 package-data = { "ultralytics" = ["**/*.yaml", "**/*.sh", "../tests/*.py"], "ultralytics.assets" = ["*.jpg"], "ultralytics.solutions.templates" = ["*.html"]}
 
-[tool.setuptools.dynamic]
-version = { attr = "ultralytics.__version__" }
+# [tool.setuptools.dynamic]
+# version = { attr = "ultralytics.__version__" }
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --durations=30 --color=yes"

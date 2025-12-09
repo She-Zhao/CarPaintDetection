@@ -15,8 +15,8 @@ dependencies = [
     "torch>=2.1.0,<2.2.0",
     "torchvision>=0.16.0,<0.17.0",
     "torchaudio>=2.1.0,<2.2.0",
-    "ultralytics==8.3.232",
-    "numpy>=1.20,<2"
+    "numpy>=1.20,<2",
+    "ultralytics",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -38,5 +38,10 @@ torchvision = [
 torchaudio = [
   { index = "pytorch-cu121", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
+ultralytics = { workspace = true }
 
+[tool.uv.workspace]
+members = [
+    "ultralytics_custom",
+]
 

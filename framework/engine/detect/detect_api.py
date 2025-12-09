@@ -14,7 +14,7 @@ class Detectprocessor:
         self.imgsz = kwargs['imgsz']
         self.selected_model = kwargs['selected_model']
         self.model_path = kwargs['all_models'][self.selected_model]
-        self.multi_img = False
+        self.multi_img = True if self.selected_model == 'MPFF' else False
         self.model = self.init_model()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
@@ -26,11 +26,10 @@ class Detectprocessor:
         """
         # 加载Pytorch模型
         weights_path = Path(__file__).parent / "weights" / self.model_path      # 从framework开始加载
-        if self.selected_model == "PMD":    # (B, 3, H, W)
+        if self.selected_model == "PMD":        # (B, 3, H, W)
             model = YOLO(weights_path)
         elif self.selected_model == "MPFF":    # (B, 5, H, W)，顺序要求：[AP, sin0, sin1, sin2, sin3]
             model = YOLO(weights_path)
-            self.multi_img = True
         elif self.selected_model == "MSIF":
             model = ''
         return model

@@ -55,7 +55,7 @@ def draw_box_on_img(img, det_rlts, input_tensor=False, stride = 32):
         
         color = (0, 0, 255)
         cv2.rectangle(draw_img, (x1, y1), (x2, y2), color=color, thickness=1)
-        text = f"class id:{int(box[0])}:{conf:.2f}"
+        text = f"class id:{int(c)}:{conf:.2f}"
         cv2.putText(draw_img, text, (x1, y1), fontFace=cv2.FONT_HERSHEY_COMPLEX, fontScale=0.5, color=color, thickness=1)
         
     return draw_img
