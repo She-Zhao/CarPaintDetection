@@ -188,11 +188,11 @@ python framework/core/robot.py    # 完全未改动
    - [x] 对torch.Tensor、List[torch.Tensor]、np.ndarray三种数据类型的输入进行接口的统一
 - [ ] `engine/preprocess/stitched2.py`       - 函数输入修改、有效区域提取代码加入 @郑豪杰
 ![image](/assets/stitched2.png)
-- [ ] `engine/detect/detect_api.py`             - 支持参数配置、模型选择         @赵射
+- [x] `engine/detect/detect_api.py`             - 支持参数配置、模型选择         @赵射
    - [x] `engine/detect/detect_api.py`          - 支持从外部yaml文件读取配置     @赵射
    - [x] `engine/detect/detect_api.py`          - 支持多模型的选择              @赵射
-   - [ ] `engine/detect/detect_api.py`          - 新检测模型算法代码及权重, 自建一个类       @刘佳璇
-   - [ ] `engine/detect/detect_api.py`          - 还需要改一下__call__方法，因为不同模型的输入图像不一样，需要跟@刘佳璇对一下新模型的输入形式，最好直接将输入包装成[N, C, H, W]的Tensor
+   - [x] `engine/detect/detect_api.py`          - 新检测模型算法代码及权重, 自建一个类       @刘佳璇
+   - [x] `engine/detect/detect_api.py`          - 还需要改一下__call__方法，因为不同模型的输入图像不一样，需要跟@刘佳璇对一下新模型的输入形式，最好直接将输入包装成[N, C, H, W]的Tensor
    ![image](/assets/detect_api.png)
 - [ ] `core/robot.py`                     - 机械臂和上位机（主机）通信，实现上位机给定一个点，机械臂走到相应的位置即可 @赵航 @李志翀   
 - [ ] `engine/detect/detect_api.py`             - 模型部署     
