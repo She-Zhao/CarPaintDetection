@@ -18,7 +18,7 @@ class Detectprocessor:
         self.model = self.init_model()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    def init_model(self) -> Union[YOLO,]:
+    def init_model(self) -> Union[YOLO]:
         """初始化模型
 
         Returns:
@@ -26,12 +26,7 @@ class Detectprocessor:
         """
         # 加载Pytorch模型
         weights_path = Path(__file__).parent / "weights" / self.model_path      # 从framework开始加载
-        if self.selected_model == "PMD":        # (B, 3, H, W)
-            model = YOLO(weights_path)
-        elif self.selected_model == "MPFF":    # (B, 5, H, W)，顺序要求：[AP, sin0, sin1, sin2, sin3]
-            model = YOLO(weights_path)
-        elif self.selected_model == "MSIF":
-            model = ''
+        model = YOLO(weights_path)
         return model
 
         # 初始化TensorRT引擎模型
@@ -42,25 +37,25 @@ class Detectprocessor:
 
     # 对外暴漏的接口
     def __call__(
-        self, 
-        inputs: Union[torch.Tensor, np.ndarray, List[torch.Tensor]]
+        self,
+        abs_phase: List[torch.Tensor],
+        processed_imgs: List[np.ndarray]
     ) -> List[torch.Tensor]:
         """返回检测结果
 
         Args:
-            inputs: 输入待检测图像，支持二/三维的Tensor/ndarray、List[Tensor](Tensor必须是二维)
-        
+            abs_phase (List[torch.Tensor]): 绝对相位图, 内层图像维度需要为二维的(H, W)
+            processed_imgs (List[np.ndarray]): 前处理的拼接结果, 内层图像维度需要为二维的(H, W)
+
         Returns:
-            List[torch.Tensor]: 返回的Tensor列表
-            每个Tensor的数据类型为torch.float32
-            形状为 [class, x, y, w, h, conf]
+            List[torch.Tensor]: 返回的Tensor列表, 每个Tensor的数据类型为torch.float32, 形状为 [class, x, y, w, h, conf]
         
         Notes:
             YOLO的输入对tensor和ndarry的支持情况不同:
             输入tensor时, 需要进行resize、归一化、维度调整到(B, C, H, W)
-            输入ndarray时， 保证维度是(H, W, 3)即可, 剩下的YOLO内部完成
+            输入ndarray时, 保证维度是(H, W, 3)即可, 剩下的YOLO内部完成。        
         """
-        images = self._preprocess(inputs)
+        images = self._preprocess(abs_phase=abs_phase, processed_imgs=processed_imgs)
 
         results = self.model(images, iou=self.iou_thres, conf=self.conf_thres, device=self.device, imgsz=[2048,2464], multi_img=self.multi_img)
 
@@ -69,25 +64,37 @@ class Detectprocessor:
             torch.cat([r.boxes.cls.unsqueeze(1), r.boxes.xywh, r.boxes.conf.unsqueeze(1)], dim=1)
             for r in results
         ]
+    
+    def _preprocess(self, abs_phase, processed_imgs):
+        if self.selected_model == 'PMD':
+            return self._preprocess_pmd(abs_phase) 
+        elif self.selected_model == 'MPFF':
+            return self._preprocess_mpff(abs_phase, processed_imgs)
+        else:
+            print(
+                f"选择的模型只能是 `PMD` 或者 `MPFF` 其中之一！"
+                f"当前选择的模型 {self.selected_model} 不符合要求, 将使用 `PMD`"
+            )
+            return self._preprocess_pmd(abs_phase) 
+    
+    def _preprocess_pmd(self, abs_phase: List[torch.Tensor]) -> torch.Tensor:
+        """对PMD模型进行前处理
 
-    def _preprocess(self, inputs):
-        """对图像依次进行格式转换(B, ?, H, W的GPU Tensor)、填充、维度变换(B, 3, H, W)
-        输入需要是二通道或者三通道，三通道必须是(C, H, W)
+        Args:
+            abs_phase (List[torch.Tensor]): 绝对相位图
+
+        Returns:
+            torch.Tensor: 模型要求的输入图像
         """
         # 转换为(B, ?, H, W)的Tensor
-        if isinstance(inputs, List):
-            x = torch.stack(inputs, dim=0)
-            if x.ndim == 3: x = x.unsqueeze(1)                  # (B, H, W) -> (B, 1, H, W)
-        
-        elif isinstance(inputs, torch.Tensor):
-            x = inputs
-            if x.ndim == 2: x = x.unsqueeze(0).unsqueeze(0)     # (H, W) -> (1, 1, H, W)
-            elif x.ndim == 3: x = x.unsqueeze(0)                # (C, H, W) -> (1, C, H, W)
-        
-        elif isinstance(inputs, np.ndarray):
-            x = torch.as_tensor(inputs)
-            if x.ndim == 2: x = x.unsqueeze(0).unsqueeze(0)     # (H, W) -> (1, 1, H, W)
-            elif x.ndim == 3: x = x.unsqueeze(0)                # (C, H, W) -> (1, C, H, W)
+        if not isinstance(abs_phase, List) or not isinstance(abs_phase[0], torch.Tensor):
+            raise TypeError(
+                f"输入的图像不符合格式要求！"
+                f"要求绝对相位图类型：{List[torch.Tensor]}"
+                f"当前绝对相位图类型: {type(abs_phase)}, dtpye={type(abs_phase[0])}"                  
+            )
+        x = torch.stack(abs_phase, dim=0)                   # List[(H, W)] -> torch.Tensor(B, H, W)
+        if x.ndim == 3: x = x.unsqueeze(1)                  # (B, H, W) -> (B, 1, H, W)
         
         # 填充
         _, _, h, w = x.shape
@@ -101,3 +108,36 @@ class Detectprocessor:
             x = x.expand(-1, 3, -1, -1).to(device=self.device, dtype=torch.float32) / 255.0
         
         return x
+
+    def _preprocess_mpff(self, abs_phase:List[torch.Tensor], processed_imgs:List[np.ndarray]) -> List[torch.Tensor]:
+        """mpff模型的前处理函数
+
+        Args:
+            abs_phase (List[torch.Tensor]): 绝对相位图
+            processed_imgs (List[np.ndarray]): 拼接后的图像
+
+        Returns:
+            List[torch.Tensor]: mpff模型的输入。五个通道依次是: [AP, sin0, sin1, sin2, sin3]
+        """
+
+        if not isinstance(processed_imgs, List) or not isinstance(abs_phase, List):
+            raise TypeError(
+                f"输入的图像不符合格式要求！"
+                f"要求绝对相位图类型：{List[torch.Tensor]}, 正弦图类型：{List[np.ndarray]}"
+                f"当前绝对相位图类型: {type(abs_phase)}, 正弦图类型: {type(processed_imgs)}"               
+            )
+        
+        sines_tensor = torch.from_numpy(np.stack(processed_imgs[-4:], axis=0))               
+        sines_tensor = sines_tensor.to(self.device, dtype=torch.float32)                    # (4, H, W)
+        phase_tensor = torch.stack(abs_phase, dim=0).to(self.device, dtpye=torch.float32)   # (1, H, W)
+
+        mpff_input = torch.cat([phase_tensor, sines_tensor], dim=0).unsqueeze(0)      # (1, 5, H, W)
+        
+        _, _, h, w = mpff_input.shape
+        right_pad = (self.stride - w%self.stride) % self.stride
+        bottom_pad = (self.stride - h%self.stride) % self.stride
+        
+        if right_pad>0 or bottom_pad>0:
+            mpff_input = F.pad(mpff_input, (0, right_pad, 0, bottom_pad), mode='constant', value=114)
+            
+        return mpff_input / 255.0

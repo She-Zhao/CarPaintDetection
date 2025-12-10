@@ -19,7 +19,7 @@ def test():
     test_images = [imgs1, imgs2]     # 替换为实际图像数据
     for _ in range(10):
         # print(123)
-        executor.execute_pipeline(test_images, debug=False)
+        executor.execute_pipeline(test_images, debug=True)
         time.sleep(0.5)
 
 if __name__ == "__main__":

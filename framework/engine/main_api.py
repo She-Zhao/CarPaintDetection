@@ -55,20 +55,20 @@ class PipelineExecutor:
     def _execute_pipeline(self, raw_imgs: List[List[np.ndarray]]) -> Dict:           # List[List[np.ndarray]]
         """算法执行pipeline"""
         # 1. 图像预处理（拼接、有效区域提取等）
-        processed_imgs = self.preprocess(raw_imgs, self.cfg.param['H_matrix'])      # processed_imgs: List[np.ndarray]
+        processed_imgs = self.preprocess(raw_imgs, self.cfg.param['H_matrix'])      # processed_imgs: List[np.ndarray],图像为(H, W)二维
         
         # 2. PMD相位计算
-        abs_phases = self.pmd(processed_imgs, self.cfg.param['th_dict'][f'pos{self.pos_idx}'])           # abs_phases: [GPU.tensor, GPU.tensor]
+        abs_phase = self.pmd(processed_imgs, self.cfg.param['th_dict'][f'pos{self.pos_idx}'])           # abs_phase: [GPU.tensor, GPU.tensor]
         
         # 3. 缺陷检测
-        defects = self.detect(abs_phases)   # defects: [GPU.tensor(n1,6), GPU.tensor(n2,6)] -> [c,x,y,w,h,conf]
+        defects = self.detect(abs_phase=abs_phase, processed_imgs=processed_imgs)   # defects: [GPU.tensor(n1,6), GPU.tensor(n2,6)] -> [c,x,y,w,h,conf]
          
         # 更新当前点位
         self.pos_idx += 1
         return {
             "raw_imgs": raw_imgs,                       # 原始图像
             "processed_img": processed_imgs,            # 预处理结果
-            "abs_phase": abs_phases,                    # 相位计算结果
+            "abs_phase": abs_phase,                    # 相位计算结果
             "defects": defects,                         # 缺陷检测结果
         }
 
