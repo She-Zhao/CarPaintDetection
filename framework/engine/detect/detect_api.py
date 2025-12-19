@@ -129,7 +129,7 @@ class Detectprocessor:
         
         sines_tensor = torch.from_numpy(np.stack(processed_imgs[-4:], axis=0))               
         sines_tensor = sines_tensor.to(self.device, dtype=torch.float32)                    # (4, H, W)
-        phase_tensor = torch.stack(abs_phase, dim=0).to(self.device, dtpye=torch.float32)   # (1, H, W)
+        phase_tensor = torch.stack(abs_phase, dim=0).to(self.device, dtype=torch.float32)   # (1, H, W)
 
         mpff_input = torch.cat([phase_tensor, sines_tensor], dim=0).unsqueeze(0)      # (1, 5, H, W)
         

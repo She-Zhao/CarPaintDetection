@@ -24,7 +24,7 @@ class PipelineExecutor:
             config (ModelConfigManager): 相关参数和模型的配置
         """
         self.executor = ThreadPoolExecutor(max_workers=1)    # 不是为了并行，而是为了新任务会自动排队等待，严格保持先进先出（FIFO）顺序
-        self.output_root = Path(__file__).parent.parent / "output"      # framework/output
+        self.output_root = Path(__file__).parent.parent.parent / "output"      # CarPaintDetection/output
         self.output_root.mkdir(parents=True, exist_ok=True)
         self.cfg = config
         self._init_algorithm_modules()

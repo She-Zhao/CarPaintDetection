@@ -173,7 +173,7 @@ cython_debug/
 # PyPI configuration file
 /source/slave/FLAG.txt
 .idea/
-framework/output/
+output/
 /test
 
 # My ignore file

@@ -17,16 +17,22 @@ dependencies = [
     "torchaudio>=2.1.0,<2.2.0",
     "numpy>=1.20,<2",
     "ultralytics",
+    "pyqt5>=5.15.11",
+    "pyqt5-qt5==5.15.2",
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = ["framework"]
 
 [[tool.uv.index]]
+name = "tuna"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
+
+[[tool.uv.index]]
 name = "pytorch-cu121"
 url = "https://download.pytorch.org/whl/cu121"
 explicit = true
-
 
 [tool.uv.sources]
 torch = [
