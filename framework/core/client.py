@@ -11,16 +11,11 @@
 """
 # -*-coding:utf-8 -*-
 import time
-import sys
 from pathlib import Path
-
-current_file = Path(__file__).resolve()
-framework_root = current_file.parent.parent
-sys.path.insert(0, str(framework_root))
-
-from module import SocketServer, CameraControl
 import argparse
+from framework.module import SocketServer, CameraControl
 from framework.engine.main_api import PipelineExecutor
+from framework.module.model_config import ModelConfigManager
 
 class CaptureTracker:
     """多相机采集状态跟踪器
@@ -83,7 +78,7 @@ def create_camera_with_callback(server, exposure=8000, max_frames=10):
                 print(f"收到主机拍照指令 {next_order}")
                 break            
     
-    return CameraControl (
+    return CameraControl(
         exposure_time=exposure,
         max_frames=max_frames,
         capture_callback=_capture_callback
@@ -106,7 +101,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--delay', type=int, default=1000)
     args = parser.parse_args()
-    executor = PipelineExecutor()       # 引入主流程处理函数，同时初始化检测模型等
+    config = ModelConfigManager()
+    executor = PipelineExecutor(config)       # 引入主流程处理函数，同时初始化检测模型等
     while True:
         try:                 
             with SocketServer(host='10.18.18.11', base_port=4096, retries=5) as server:

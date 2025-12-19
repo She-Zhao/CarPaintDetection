@@ -1,0 +1,16 @@
+detect:
+  iou_thres: 0.5
+  conf_thres: 0.25
+  stride: 32
+  imgsz: [2048,2464]
+  selected_model: 'MPFF'             # 从all_models里面直接选择一个模型即可
+  all_models:                       
+    PMD: 'yolo11s_pmd847.pt'        # 直接写名称即可
+    MPFF: 'mpff_map868.pt'
+
+pmd:
+  max_workers: 2    # 仅在_process_multi中才用到
+  image_names: ["gc0", "gc1", "gc2", "gc3", "gc4", "sin0", "sin1", "sin2", "sin3"]    # 保存的图像名称
+
+preprocess:
+

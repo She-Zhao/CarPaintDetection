@@ -7,6 +7,78 @@
 3. 启动程序繁琐，复现困难  
 4. 缺少异常处理，调试困难  
 
+#### ⚡ **核心工作流程**
+
+```mermaid
+flowchart TD
+    %% 定义样式
+    classDef host fill:#e1f5fe,stroke:#01579b
+    classDef client fill:#e8f5e8,stroke:#2e7d32
+    classDef camera fill:#f3e5f5,stroke:#7b1fa2
+    classDef algorithm fill:#fff3e0,stroke:#ef6c00
+    classDef storage fill:#f1f8e9,stroke:#689f38
+    
+    %% 主框架
+    subgraph "分布式系统架构"
+        A[主机<br/>server.py]:::host
+        B[从机<br/>client.py]:::client
+    end
+    
+    subgraph "图像采集模块"
+        C[相机控制器<br/>camera.py]:::camera
+        C1[Basler GigE相机]
+        C2[同步采集控制]
+        C3[图像缓冲区管理]
+    end
+    
+    subgraph "核心算法流水线"
+        D[流水线调度器<br/>main_api.py]:::algorithm
+        E[图像预处理<br/>preprocess_api.py]:::algorithm
+        F[PMD相位计算<br/>pmd_api.py]:::algorithm
+        G[缺陷检测<br/>detect_api.py]:::algorithm
+    end
+    
+    subgraph "数据存储模块"
+        H[结果存储]:::storage
+        H1[原始图像]
+        H2[预处理图像]
+        H3[相位图]
+        H4[缺陷标注]
+    end
+    
+    %% 连接关系
+    A -- "Socket协议<br/>投影控制指令" --> B
+    B -- "相机采集指令" --> C
+    
+    C1 --> C2 --> C3
+    C3 -- "原始图像数据" --> D
+    
+    D --> E -- "预处理图像" --> F -- "绝对相位图" --> G
+    
+    G -- "检测结果" --> H
+    
+    %% 异步处理机制
+    subgraph "异步任务队列"
+        I[ThreadPoolExecutor]
+        J[FIFO任务队列]
+        K[异步回调机制]
+    end
+    
+    D -.-> I
+    I --> J --> K
+    K -.-> H
+    
+    %% 数据流向说明
+    linkStyle 0 stroke:#01579b,stroke-width:2px
+    linkStyle 1 stroke:#2e7d32,stroke-width:2px
+    linkStyle 2 stroke:#7b1fa2,stroke-width:1px
+    linkStyle 3 stroke:#7b1fa2,stroke-width:1px
+    linkStyle 4 stroke:#ef6c00,stroke-width:2px
+    linkStyle 5 stroke:#ef6c00,stroke-width:2px
+    linkStyle 6 stroke:#ef6c00,stroke-width:2px
+    linkStyle 7 stroke:#689f38,stroke-width:2px
+```
+
 ## 📂 1.当前代码结构：
 `feat/framework`分支下包含：
 - `framework/`：重写后代码
@@ -16,32 +88,41 @@
 **framework文件夹结构**：
 ```
 core/              实际运行时的核心代码
-├── client.py    → 原slave.py（从机启动）
-├── server.py    → 原host.py（主机启动）
+├── offline/
+│  ├── calibration.py      # 计算单应性矩阵脚本
+│  ├── Genetic_main.py     # 遗传算法计算格雷码二值化参数脚本
+│  └── 其他离线处理脚本（待补充）
+|
+├── client.py    # 从机启动脚本（原slave.py）
+├── server.py    # 主机启动脚本（原host.py）
 └── jiege.py     # 机械臂启动
 
 data/                  代码运行用到的数据
 ├── patterns/          # 投影图像
-└── main_point.txt     # 机械臂点位
+├── param.json         # 相机Homography矩阵、格雷码二值化参数
+└── main_point.txt     # 存储机械臂点位
 
 engine/                核心检测算法的代码
 ├── __init__.py
 ├── main_api.py/        # 所有算法的处理接口
 │
-├── pmd/               
-│  ├── __init__.py/          
-│  ├── pmd_api.py      # pmd算法处理接口
-│  └── 其他文件
-│
-├── detect/             
-│  ├── __init__.py/          
-│  ├── detect_api.py    # 检测算法处理接口
-│  └── 其他文件   
-│
 ├── preprocess/         
 │  ├── __init__.py/          
 │  ├── preprocess_api.py   # 成像算法处理接口
 │  └── 其他文件
+│
+├── pmd/               
+│  ├── __init__.py/          
+│  ├── pmd_api.py                # pmd算法处理接口
+│  ├── wrapped_phase.py         
+│  ├── gc_binarization.py       
+│  ├── unwrapped_phase.py       
+│  └── wrapped_phase.py   
+|
+├── detect/             
+│  ├── __init__.py/          
+│  ├── detect_api.py    # 检测算法处理接口
+│  └── 其他文件   
 
 module/                系统运行需要的模块化代码
 ├── Camera.py          # 相机处理
@@ -86,20 +167,41 @@ tools/                 # 开发过程中可能用到的工具类文件。
 所有需要运行的文件均放置在core中，包括如下三个文件。
 ```bash
 # 从机端
-python core/client.py   # 原slave.py
+python framework/core/client.py   # 原slave.py
 
 # 主机端
-python core/server.py   # 原host.py
+python framework/core/server.py   # 原host.py
 
 # 机械臂
-python core/jiege.py    # 完全未改动
+python framework/core/robot.py    # 完全未改动
 ```
 
-## 🔜 4.后续优化
-- client.py与preprocess.py（豪杰）的集成
-- 机械臂和上位机通信部分代码，以及在机械臂执行过程中调用相机的测试
-- 双相机时序问题
+## 🔜 4.TODO
 
+### 🚧 框架重构任务
+- [x] `core/visiualizer.py`                  - 添加主机结果可视化 @赵射
+- [ ] `engine/main_api.py`                   - 从机检测结果发送   @赵射
+- [x] `engine/pmd/pmd_api.py`                - 支持从config.json中加载二值化参数 @赵射
+- [x] `engine/preprocess/preprocess_api.py`  - 支持从config.json中加载单应性矩阵 @赵射
+- [x] `engine/main_api.py/PipelineExecutor`  - 在这里初始化的时候就将所有配置参数加载进去 @赵射
+- [x] `engine/detect/detect_api.py`          - 封装检测算法调用接口
+   - [x] 为了保证PMD的处理结果直接连到YOLO的输入上，需要自己实现一个GPU版本的LetterBox，对输入图像的尺寸进行resize
+   - [x] 支持List[torch.Tensor]的输入
+   - [x] 对torch.Tensor、List[torch.Tensor]、np.ndarray三种数据类型的输入进行接口的统一
+![image](/assets/stitched2.png)
+- [x] `engine/detect/detect_api.py`             - 支持参数配置、模型选择         @赵射
+   - [x] `engine/detect/detect_api.py`          - 支持从外部yaml文件读取配置     @赵射
+   - [x] `engine/detect/detect_api.py`          - 支持多模型的选择              @赵射
+   - [x] `engine/detect/detect_api.py`          - 新检测模型算法代码及权重, 自建一个类       @刘佳璇
+   - [x] `engine/detect/detect_api.py`          - 还需要改一下__call__方法，因为不同模型的输入图像不一样，需要跟@刘佳璇对一下新模型的输入形式，最好直接将输入包装成[N, C, H, W]的Tensor
+   ![image](/assets/detect_api.png)
+- [ ] `engine/preprocess/stitched2.py`       - 函数输入修改、有效区域提取代码加入 @郑豪杰
+- [ ] `core/robot.py`                     - 机械臂和上位机（主机）通信，实现上位机给定一个点，机械臂走到相应的位置即可 @赵航 @李志翀   
+- [ ] `engine/detect/detect_api.py`             - 模型部署     
+   - [ ] `engine/detect/detect_api.py`          - YOLO模型部署，重点是跟PMD衔接上，以及输入模型的尺寸 @郑豪杰
+- [ ] `core/offline`                      - 机械臂轨迹规划算法及二值化遗传算法加入   @郑豪杰 @赵航
+- [ ] `module/camera.py`                     - 双相机异步触发 @赵射
+ 
 ## ❗关于包导入
 - 不同包之间的相互引用在系统复杂以后很麻烦，同学可以了解下**相对导入**和**绝对导入**这两个概念
    - 绝对导入： from framework.engine.pmd import xxx
