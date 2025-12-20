@@ -179,12 +179,18 @@ python framework/core/robot.py    # 完全未改动
 ## 🔜 4.TODO
 
 ### 🚧 框架重构任务
+- [ ] `core/visiualizer.py`                  - 将GUI界面作为主机的启动端
+![image](/assets/GUI.png)
 - [x] `core/visiualizer.py`                  - 添加主机结果可视化 @赵射
 - [ ] `engine/main_api.py`                   - 从机检测结果发送   @赵射
 - [x] `engine/pmd/pmd_api.py`                - 支持从config.json中加载二值化参数 @赵射
 - [x] `engine/preprocess/preprocess_api.py`  - 支持从config.json中加载单应性矩阵 @赵射
 - [x] `engine/main_api.py/PipelineExecutor`  - 在这里初始化的时候就将所有配置参数加载进去 @赵射
 - [x] `engine/detect/detect_api.py`          - 封装检测算法调用接口
+当前支持三个模型：
+![PMD-architecture](/assets/PMD.png)
+![MSIFusion-architecture](/assets/MSIFusion.png)
+![MPFF-architecture](/assets/MPFF.png)
    - [x] 为了保证PMD的处理结果直接连到YOLO的输入上，需要自己实现一个GPU版本的LetterBox，对输入图像的尺寸进行resize
    - [x] 支持List[torch.Tensor]的输入
    - [x] 对torch.Tensor、List[torch.Tensor]、np.ndarray三种数据类型的输入进行接口的统一
