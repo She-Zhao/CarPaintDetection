@@ -179,3 +179,5 @@ output/
 
 # My ignore file
 *.png
+received_test/
+received_output/

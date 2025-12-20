@@ -12,18 +12,11 @@
 >>> from core import main
 >>> main('./projection_images/')
 """
-
 # -*-coding:utf-8 -*-
 import cv2
 import sys
 from pathlib import Path
-
-current_file = Path(__file__).resolve()
-framework_root = current_file.parent.parent
-sys.path.insert(0, str(framework_root))
-
-from module import HostControl
-
+from framework.module import HostControl
 
 def main(folder_path):
     """系统主控制流程，这里用于实现按键拍照，不涉及机械臂。
@@ -74,5 +67,5 @@ def main(folder_path):
 
 
 if __name__ == '__main__':
-    folder_path = r'D:\Project\CarPaintDetection\framework\data\patterns\nums10'
+    folder_path = r'D:\Project\CarPaintDetection\framework\cfg\patterns\nums10'
     main(folder_path)
