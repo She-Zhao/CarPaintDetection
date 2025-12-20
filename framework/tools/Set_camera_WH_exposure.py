@@ -14,11 +14,13 @@ def search_get_device(camera_ip):#查找相机
         raise EnvironmentError("no GigE device found")
     return camera
 
-Height = Width = 800
+# Height = Width = 800
+Height = 2048
+Width = 2448
 ExposureTime = 8000
 
-cam1 = search_get_device('10.18.18.21')
-cam2 = search_get_device('10.18.18.22')
+cam1 = search_get_device('10.18.18.25')
+cam2 = search_get_device('10.18.18.26')
 cam1.Open()
 cam2.Open()
 

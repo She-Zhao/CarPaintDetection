@@ -3,7 +3,7 @@ detect:
   conf_thres: 0.25
   stride: 32
   imgsz: [2048,2464]
-  selected_model: 'MPFF'             # 从all_models里面直接选择一个模型即可
+  selected_model: 'PMD'             # 从all_models里面直接选择一个模型即可
   all_models:                       
     PMD: 'yolo11s_pmd847.pt'        # 直接写名称即可
     MPFF: 'mpff_map868.pt'

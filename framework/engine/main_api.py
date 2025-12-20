@@ -10,6 +10,7 @@ from framework.engine.preprocess.preprocess_api import Preprocessor
 from framework.engine.pmd.pmd_api import PMDprocessor
 from framework.engine.detect.detect_api import Detectprocessor
 from framework.module import ModelConfigManager
+import pdb
 
 class PipelineExecutor:
     """算法pipeline执行器
@@ -31,7 +32,7 @@ class PipelineExecutor:
         self._init_algorithm_modules()
         self.pos_idx = 0
 
-        self.host_ip = '10.18.18.1' # 主机 IP (请根据实际情况修改)
+        self.host_ip = '10.18.18.10' # 主机 IP (请根据实际情况修改)
         self.data_port = 4097        # 数据专用端口
         self.data_socket = None
         self._try_connect_host()
@@ -76,6 +77,7 @@ class PipelineExecutor:
     def _execute_pipeline(self, raw_imgs: List[List[np.ndarray]]) -> Dict:           # List[List[np.ndarray]]
         """算法执行pipeline"""
         # 1. 图像预处理（拼接、有效区域提取等）
+        import pdb
         processed_imgs = self.preprocess(raw_imgs, self.cfg.param['H_matrix'])      # processed_imgs: List[np.ndarray],图像为(H, W)二维
         
         # 2. PMD相位计算
@@ -100,61 +102,92 @@ class PipelineExecutor:
         except Exception as e:
             print(f"保存失败: {str(e)}")
 
+    # 请替换原有的 _save_results 方法
     def _save_results(self, result):
-        """统一保存结果（同步/异步共用）"""
+        """保存并发送所有结果（循环发送模式）"""
         pos_dir = self._create_pos_dir()
+        current_pos_id = int(pos_dir.name.replace("pos", "")) # 获取当前点位ID (例如 1)
         
-        # 保存原始图像（文件名包含相机编号）
+        # === 1. 准备要保存/发送的所有图像任务 ===
+        # 格式: (image_data, filename)
+        tasks = []
+
+        # (1) 原始图像
         for cam_idx, cam_imgs in enumerate(result["raw_imgs"], start=1):
             for img, name in zip(cam_imgs, self.cfg.config['pmd']['image_names']):
                 filename = f"cam{cam_idx}_{name}.png"
-                path = pos_dir / filename
-                cv2.imwrite(str(path), img)
+                tasks.append((img, filename))
+                # 本地保存 (备份)
+                cv2.imwrite(str(pos_dir / filename), img)
 
-        # 保存预处理结果
+        # (2) 预处理图像
         for i, processed_img in enumerate(result["processed_img"], start=1):
-            cv2.imwrite(str(pos_dir / f"processed_{i}.png"), processed_img)
+            filename = f"processed_{i}.png"
+            tasks.append((processed_img, filename))
+            cv2.imwrite(str(pos_dir / filename), processed_img)
         
-        # 保存相位图
+        # (3) 相位图 (需要从 Tensor 转 numpy)
         for i, phase_img in enumerate(result["abs_phase"], start=1):
-            cv2.imwrite(str(pos_dir / f"phase_{i}.png"), phase_img.cpu().numpy())
+            filename = f"phase_{i}.png"
+            # Tensor -> Numpy -> Normalize(0-255) -> Color
+            img_np = phase_img.cpu().numpy()
+            img_norm = cv2.normalize(img_np, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+            img_color = cv2.cvtColor(img_norm, cv2.COLOR_GRAY2BGR)
             
-        # 保存检测结果
+            tasks.append((img_color, filename))
+            # 本地保存 (注意本地保存 float 原图还是 uint8 可视化图？这里保持原逻辑存 float)
+            # 如果原逻辑是存 float，这里仅为了传输转了 uint8。
+            # 这里为了简单，假设本地也存 uint8 预览，或者你可以保留原有的 cv2.imwrite 逻辑
+            cv2.imwrite(str(pos_dir / filename), img_np) # 保持原有逻辑存 float/raw
+
+        # (4) 准备缺陷数据
         defects_tensor = result["defects"]
-        defects_list = [defect.tolist() for defect in defects_tensor]
+        defects_list = [d.tolist() for d in defects_tensor]
+        # 本地保存 JSON
         with open(pos_dir / "defects.json", "w") as f:
             json.dump(defects_list, f, indent=2)
-        
-        print(f"结果已保存至 {pos_dir}")
-        
-        # === [新增] 发送数据到主机 ===
+
+        print(f"本地结果已保存至 {pos_dir}")
+
+        # === 2. 循环发送数据 ===
         if self.data_socket:
+            print(f"📤 [Data] 开始传输点位 {current_pos_id} 的数据，共 {len(tasks)} 张图像...")
             try:
-                print("📤 [Data] 正在向主机发送数据...")
+                total = len(tasks)
+                for i, (img, fname) in enumerate(tasks):
+                    is_last = (i == total - 1)
+                    
+                    # 构造元数据 (Metadata)
+                    # 只有最后一张图才附带 defects 数据，其他时候为空列表，节省带宽
+                    meta_data = {
+                        "pos_id": current_pos_id,
+                        "filename": fname,
+                        "is_last": is_last,
+                        "defects": defects_list if is_last else [] 
+                    }
+                    
+                    # 确保图像是 uint8 BGR 格式 (传输通用格式)
+                    # 注意：如果 tasks 里的 img 已经是 uint8 BGR 则直接用，否则需要转换
+                    # 上面 raw 和 processed 都是 BGR uint8，但 phase 需要注意
+                    if img.dtype != np.uint8:
+                         # 再次确保转换（防止上面 phase 本地存的是 float）
+                         img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+                         if len(img.shape) == 2:
+                             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+                    # 打包发送
+                    packet = DataProtocol.pack_data(img, meta_data)
+                    self.data_socket.sendall(packet)
+                    
+                    # 可选：打印进度
+                    # print(f"  -> 发送 {fname} ({i+1}/{total})")
+
+                print(f"✅ [Data] 点位 {current_pos_id} 传输完成")
                 
-                # 1. 准备图片 (这里以发送第一张相位图为例，你也可以改发拼接图)
-                # result["abs_phase"] 是 List[Tensor]
-                phase_tensor = result["abs_phase"][0] 
-                img_data = phase_tensor.cpu().numpy()
-                
-                # 归一化转为 uint8 图片格式 (0-255)
-                img_data = cv2.normalize(img_data, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-                img_data = cv2.cvtColor(img_data, cv2.COLOR_GRAY2BGR) # 转3通道
-                
-                # 2. 准备 JSON 数据
-                defects_tensor = result["defects"]
-                defects_list = [d.tolist() for d in defects_tensor]
-                
-                # 3. 打包并发送
-                packet = DataProtocol.pack_data(img_data, defects_list)
-                self.data_socket.sendall(packet)
-                print(f"✅ [Data] 发送成功 ({len(packet)} bytes)")
-                
-            except (BrokenPipeError, ConnectionResetError, socket.timeout):
-                print("❌ [Data] 连接断开，尝试重连...")
-                self._try_connect_host()
             except Exception as e:
-                print(f"❌ [Data] 发送异常: {e}")
+                print(f"❌ [Data] 传输中断: {e}")
+                # 遇到错误尝试重连，保证下次可用
+                self._try_connect_host()
 
     def _create_pos_dir(self) -> Path:
         """创建递增的pos目录"""

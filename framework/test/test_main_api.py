@@ -4,10 +4,12 @@ import os
 from framework.engine.main_api import PipelineExecutor
 from framework.module.model_config import ModelConfigManager
 import time
+from pathlib import Path
 
 def test():
-    datapath1 = r'D:\Github\_New_System\test\pos1'
-    datapath2 = r'D:\Github\_New_System\test\pos2'
+    root_dir = Path(__file__).parent.parent.parent
+    datapath1 = root_dir / 'test/pos1'
+    datapath2 = root_dir / 'test/pos2'
     imgs1 = [cv2.imread(os.path.join(datapath1, img), cv2.IMREAD_GRAYSCALE).squeeze() 
                 for img in sorted(os.listdir(datapath1))]
     imgs2 = [cv2.imread(os.path.join(datapath2, img), cv2.IMREAD_GRAYSCALE).squeeze()
