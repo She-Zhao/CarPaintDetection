@@ -11,7 +11,6 @@
 """
 # -*-coding:utf-8 -*-
 import time
-from pathlib import Path
 import argparse
 from framework.module import SocketServer, CameraControl
 from framework.engine.main_api import PipelineExecutor

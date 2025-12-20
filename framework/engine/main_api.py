@@ -1,8 +1,9 @@
-# engine/processor.py
 from pathlib import Path
+import socket
+import json
 from typing import List, Dict
 from concurrent.futures import ThreadPoolExecutor
-import json
+from framework.module.transfer import DataProtocol
 import cv2  
 import numpy as np
 from framework.engine.preprocess.preprocess_api import Preprocessor
@@ -29,6 +30,26 @@ class PipelineExecutor:
         self.cfg = config
         self._init_algorithm_modules()
         self.pos_idx = 0
+
+        self.host_ip = '10.18.18.1' # 主机 IP (请根据实际情况修改)
+        self.data_port = 4097        # 数据专用端口
+        self.data_socket = None
+        self._try_connect_host()
+
+    # === [新增] 连接辅助函数 ===
+    def _try_connect_host(self):
+        """尝试连接主机，连接失败不报错，只打印警告"""
+        try:
+            if self.data_socket:
+                self.data_socket.close()
+            self.data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.data_socket.settimeout(1.0) # 1秒连接超时
+            self.data_socket.connect((self.host_ip, self.data_port))
+            self.data_socket.settimeout(None) # 连接后取消超时（或设长一点）
+            print(f"✅ [Data] 已连接到主机数据服务 {self.host_ip}:{self.data_port}")
+        except Exception as e:
+            print(f"⚠️ [Data] 连接主机失败: {e} (将仅保存本地)")
+            self.data_socket = None
 
     def _init_algorithm_modules(self):
         """动态加载算法模块（保持扩展性）"""
@@ -105,6 +126,35 @@ class PipelineExecutor:
             json.dump(defects_list, f, indent=2)
         
         print(f"结果已保存至 {pos_dir}")
+        
+        # === [新增] 发送数据到主机 ===
+        if self.data_socket:
+            try:
+                print("📤 [Data] 正在向主机发送数据...")
+                
+                # 1. 准备图片 (这里以发送第一张相位图为例，你也可以改发拼接图)
+                # result["abs_phase"] 是 List[Tensor]
+                phase_tensor = result["abs_phase"][0] 
+                img_data = phase_tensor.cpu().numpy()
+                
+                # 归一化转为 uint8 图片格式 (0-255)
+                img_data = cv2.normalize(img_data, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+                img_data = cv2.cvtColor(img_data, cv2.COLOR_GRAY2BGR) # 转3通道
+                
+                # 2. 准备 JSON 数据
+                defects_tensor = result["defects"]
+                defects_list = [d.tolist() for d in defects_tensor]
+                
+                # 3. 打包并发送
+                packet = DataProtocol.pack_data(img_data, defects_list)
+                self.data_socket.sendall(packet)
+                print(f"✅ [Data] 发送成功 ({len(packet)} bytes)")
+                
+            except (BrokenPipeError, ConnectionResetError, socket.timeout):
+                print("❌ [Data] 连接断开，尝试重连...")
+                self._try_connect_host()
+            except Exception as e:
+                print(f"❌ [Data] 发送异常: {e}")
 
     def _create_pos_dir(self) -> Path:
         """创建递增的pos目录"""
