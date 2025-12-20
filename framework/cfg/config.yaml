@@ -7,10 +7,10 @@ detect:
   all_models:                       
     PMD: 'yolo11s_pmd847.pt'        # 直接写名称即可
     MPFF: 'mpff_map868.pt'
+    MSIFusion: ''
 
 pmd:
   max_workers: 2    # 仅在_process_multi中才用到
   image_names: ["gc0", "gc1", "gc2", "gc3", "gc4", "sin0", "sin1", "sin2", "sin3"]    # 保存的图像名称
 
 preprocess:
-
