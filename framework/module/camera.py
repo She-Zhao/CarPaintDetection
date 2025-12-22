@@ -107,6 +107,11 @@ class CameraControl :
             py.TimeoutException: 图像采集超时时抛出
         """        
         try:
+            # === [新增] 必须在开始采集前清空旧数据 ===
+            for serial in self.img_buffers:
+                self.img_buffers[serial] = [] # 清空列表
+            # ========================================
+            
             self.cam_array.StartGrabbing(py.GrabStrategy_LatestImageOnly)
             # 两个相机从调用StartGrabbing到可以拍照需要时间，不加延时的话其中一个相机准备好了会先拍照导致时许对不上
             time.sleep(0.05)

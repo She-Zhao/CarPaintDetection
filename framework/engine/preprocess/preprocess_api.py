@@ -17,4 +17,4 @@ class Preprocessor:
         """
         # stitched_img = stitch_images(raw_imgs[0], raw_imgs[1], H_matrix)     # raw_imgs第一个idx对应相机,第二个idx对应第几个图像
         # processed_imgs = stitched_img
-        return raw_imgs[0]
+        return raw_imgs[1]
