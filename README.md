@@ -180,10 +180,15 @@ python framework/core/robot.py    # 完全未改动
 
 ### 🚧 框架重构任务
 - [ ] `core/visiualizer.py`                  - 将GUI界面作为主机的启动端
+   - [ ] `module/camera.py`                  - 当前在GUI运行两次检测图像时会报错，因为创建了两次camera对象
+   - [ ] `GUI/`                              - 界面需要再完善下，进入后支持两个离线和在线两种模式
+   - [ ] `GUI/main_window.py`                - 界面左侧的pos文件夹现在刷新不及时
+
 ![image](/assets/GUI.png)
 - [x] `core/visiualizer.py`                  - 添加主机结果可视化 @赵射
 - [ ] `engine/main_api.py`                   - 从机检测结果发送   @赵射
-   - [ ] `engine/main_api.py`                - 当前发送图像会发送多个preprocessed.png，估计是逻辑有问题，需要解决下
+   - [x] `engine/main_api.py`                - 当前发送图像会发送多个preprocessed.png，估计是逻辑有问题，需要解决下
+   - [ ] `engine/main_api.py`                - 现在的main_api.py功能太多了，需要重构下，看起来清爽一些
 - [x] `engine/pmd/pmd_api.py`                - 支持从config.json中加载二值化参数 @赵射
 - [x] `engine/preprocess/preprocess_api.py`  - 支持从config.json中加载单应性矩阵 @赵射
 - [x] `engine/main_api.py/PipelineExecutor`  - 在这里初始化的时候就将所有配置参数加载进去 @赵射

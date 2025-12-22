@@ -200,3 +200,164 @@ class DefectVisualizer(QMainWindow):
     # 注意：为了代码完整性，请务必把上面省略的方法从你原来的 visualizer.py 
     # 复制到这个类下面。逻辑不需要任何修改。
     # -------------------------------------------------------------
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_A:
+            current_row = self.pos_list_widget.currentRow()
+            if current_row > 0:
+                self.pos_list_widget.setCurrentRow(current_row - 1)
+        elif event.key() == Qt.Key_D:
+            current_row = self.pos_list_widget.currentRow()
+            if current_row < self.pos_list_widget.count() - 1:
+                self.pos_list_widget.setCurrentRow(current_row + 1)
+        else:
+            super().keyPressEvent(event)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(100, self.fit_image)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.fit_image()
+
+    def fit_image(self):
+        if self.scene.itemsBoundingRect().width() > 0:
+            self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
+
+    def load_pos_list(self):
+        self.pos_list_widget.clear()
+        if not self.data_root.exists(): return
+        dirs = [d for d in self.data_root.iterdir() if d.is_dir() and d.name.startswith("pos")]
+        dirs.sort(key=lambda x: int(x.name.replace("pos", "")) if x.name.replace("pos", "").isdigit() else 0)
+        for d in dirs:
+            self.pos_list_widget.addItem(d.name)
+
+    def on_pos_selected(self, index):
+        if index < 0: return
+        item = self.pos_list_widget.item(index)
+        self.current_pos_dir = self.data_root / item.text()
+        self.lbl_pos_info.setText(f"CURRENT: {item.text()}")
+        
+        self.load_defects_data()
+        self.update_stats_table()
+        self.update_defects_table()
+        self.refresh_view()
+
+    def load_defects_data(self):
+        self.defects_data = []
+        json_path = self.current_pos_dir / "defects.json"
+        if json_path.exists():
+            try:
+                with open(json_path, 'r') as f:
+                    raw_data = json.load(f)
+                if len(raw_data) > 0 and isinstance(raw_data[0], list):
+                     if len(raw_data[0]) > 0 and isinstance(raw_data[0][0], list):
+                         self.defects_data = [d for sublist in raw_data for d in sublist]
+                     else:
+                         self.defects_data = [d for sublist in raw_data for d in sublist]
+                else:
+                    self.defects_data = raw_data
+            except Exception:
+                pass
+
+    def update_stats_table(self):
+        stats = {}
+        for defect in self.defects_data:
+            cls_id = int(defect[0])
+            stats[cls_id] = stats.get(cls_id, 0) + 1
+        
+        self.stats_table.setRowCount(len(stats))
+        sorted_stats = sorted(stats.items(), key=lambda x: x[1], reverse=True)
+        
+        for i, (cls_id, count) in enumerate(sorted_stats):
+            name = DEFECT_CLASSES.get(cls_id, f"Type {cls_id}")
+            self.stats_table.setItem(i, 0, QTableWidgetItem(name))
+            self.stats_table.setItem(i, 1, QTableWidgetItem(str(count)))
+
+    def refresh_view(self):
+        if not self.current_pos_dir: return
+        mode = self.view_selector.currentText()
+        
+        img_name = "phase_1.png"
+        if "Processed" in mode: img_name = "processed_5.png"
+        elif "Raw" in mode: img_name = "cam1_sin0.png"
+        
+        img_path = self.current_pos_dir / img_name
+        self.scene.clear()
+        self.box_items = []
+
+        if img_path.exists():
+            self.current_img_np = cv2.imdecode(np.fromfile(str(img_path), dtype=np.uint8), cv2.IMREAD_COLOR)
+            if self.current_img_np is None: return
+            
+            img_rgb = cv2.cvtColor(self.current_img_np, cv2.COLOR_BGR2RGB)
+            h, w, ch = img_rgb.shape
+            q_img = QImage(img_rgb.data, w, h, ch * w, QImage.Format_RGB888)
+            self.img_item = QGraphicsPixmapItem(QPixmap.fromImage(q_img))
+            self.scene.addItem(self.img_item)
+            
+            self.draw_defects()
+            self.fit_image()
+        else:
+            self.scene.addText(f"Image Not Found: {img_name}", QFont("Arial", 20)).setDefaultTextColor(Qt.red)
+
+    def draw_defects(self):
+        font = QFont("Arial", 10, QFont.Bold)
+        for i, defect in enumerate(self.defects_data):
+            cls_id, x, y, w, h, conf = defect
+            box = InteractiveDefectBox(x, y, w, h, i, self.interact_select_defect)
+            name = DEFECT_CLASSES.get(int(cls_id), "Unknown")
+            box.setToolTip(f"ID:{i}\nType: {name}\nConf: {conf:.2f}") 
+            self.scene.addItem(box)
+            self.box_items.append(box)
+            text = self.scene.addText(f"#{i}", font)
+            text.setDefaultTextColor(QColor(255, 50, 50))
+            text.setPos(x, y - 25)
+
+    def update_defects_table(self):
+        self.defect_table.setRowCount(len(self.defects_data))
+        for i, defect in enumerate(self.defects_data):
+            cls_id, _, _, _, _, conf = defect
+            name = DEFECT_CLASSES.get(int(cls_id), str(cls_id))
+            item_id = QTableWidgetItem(str(i)); item_id.setTextAlignment(Qt.AlignCenter)
+            item_type = QTableWidgetItem(name)
+            item_conf = QTableWidgetItem(f"{conf:.2f}"); item_conf.setTextAlignment(Qt.AlignCenter)
+            self.defect_table.setItem(i, 0, item_id)
+            self.defect_table.setItem(i, 1, item_type)
+            self.defect_table.setItem(i, 2, item_conf)
+
+    def on_table_row_clicked(self, row, col):
+        self.interact_select_defect(row)
+
+    def interact_select_defect(self, index):
+        if index < 0 or index >= len(self.defects_data): return
+        self.defect_table.selectRow(index)
+        self.defect_table.scrollToItem(self.defect_table.item(index, 0))
+        for i, box in enumerate(self.box_items):
+            if i == index:
+                box.set_highlight(True)
+            else:
+                box.set_highlight(False)
+        self.update_roi_view(index)
+
+    def update_roi_view(self, index):
+        if self.current_img_np is None: return
+        defect = self.defects_data[index]
+        x, y, w, h = map(int, defect[1:5])
+        
+        pad = 50 
+        img_h, img_w, _ = self.current_img_np.shape
+        x1, y1 = max(0, x - pad), max(0, y - pad)
+        x2, y2 = min(img_w, x + w + pad), min(img_h, y + h + pad)
+        
+        roi = self.current_img_np[y1:y2, x1:x2]
+        if roi.size > 0:
+            roi = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
+            h_roi, w_roi, ch = roi.shape
+            q_roi = QImage(roi.data, w_roi, h_roi, ch * w_roi, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(q_roi)
+            
+            label_size = self.roi_label.size()
+            scaled_pixmap = pixmap.scaled(label_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            
+            self.roi_label.setPixmap(scaled_pixmap)

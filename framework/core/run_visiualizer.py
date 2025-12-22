@@ -9,7 +9,7 @@ from framework.gui.main_window import DefectVisualizer
 
 if __name__ == "__main__":
     # 自动识别 output 路径 (假设在项目根目录的 output)
-    local_output_path = Path(__file__).parent / "output"
+    local_output_path = Path(__file__).parent.parent.parent / "received_output"
     
     app = QApplication(sys.argv)
     
