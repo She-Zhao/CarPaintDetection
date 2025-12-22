@@ -125,7 +125,7 @@ class CameraControl :
                     if res.GrabSucceeded():
                         serial = res.GetCameraContext()
                         self.img_buffers[serial].append(res.Array)
-                        print(f">>>>>相机{serial}，照片数量为{len(self.img_buffers[serial])}")
+                        # print(f">>>>>相机{serial}，照片数量为{len(self.img_buffers[serial])}")
 
                         if self.capture_callback:
                             self.capture_callback(serial)  # 触发回调传递序列号，向主机发送切换请求

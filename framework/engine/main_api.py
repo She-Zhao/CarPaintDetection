@@ -1,16 +1,16 @@
 from pathlib import Path
 import socket
 import json
+import time
 from typing import List, Dict
 from concurrent.futures import ThreadPoolExecutor
-from framework.module.transfer import DataProtocol
 import cv2  
 import numpy as np
+from framework.module.transfer import DataProtocol
 from framework.engine.preprocess.preprocess_api import Preprocessor
 from framework.engine.pmd.pmd_api import PMDprocessor
 from framework.engine.detect.detect_api import Detectprocessor
 from framework.module import ModelConfigManager
-import pdb
 
 class PipelineExecutor:
     """算法pipeline执行器
@@ -35,22 +35,30 @@ class PipelineExecutor:
         self.host_ip = '10.18.18.10' # 主机 IP (请根据实际情况修改)
         self.data_port = 4097        # 数据专用端口
         self.data_socket = None
-        self._try_connect_host()
+        self._connect_host_blocking()
 
-    # === [新增] 连接辅助函数 ===
-    def _try_connect_host(self):
-        """尝试连接主机，连接失败不报错，只打印警告"""
-        try:
-            if self.data_socket:
-                self.data_socket.close()
-            self.data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.data_socket.settimeout(1.0) # 1秒连接超时
-            self.data_socket.connect((self.host_ip, self.data_port))
-            self.data_socket.settimeout(None) # 连接后取消超时（或设长一点）
-            print(f"✅ [Data] 已连接到主机数据服务 {self.host_ip}:{self.data_port}")
-        except Exception as e:
-            print(f"⚠️ [Data] 连接主机失败: {e} (将仅保存本地)")
-            self.data_socket = None
+    def _connect_host_blocking(self):
+        """阻塞式连接：直到连接成功才返回"""
+        print(f"🔄 [Data] 正在连接主机数据服务 {self.host_ip}:{self.data_port}...")
+        
+        while self.data_socket is None:
+            try:
+                temp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # 设置较短的超时，方便快速轮询
+                temp_socket.settimeout(2.0) 
+                temp_socket.connect((self.host_ip, self.data_port))
+                
+                # 连接成功
+                temp_socket.settimeout(None) # 恢复阻塞模式
+                self.data_socket = temp_socket
+                print(f"✅ [Data] 初始化连接成功！数据通道已建立。")
+                
+            except (ConnectionRefusedError, TimeoutError, socket.timeout):
+                print(f"⏳ [Data] 等待主机启动接收服务 (Port {self.data_port})...")
+                time.sleep(1) # 等待 1 秒再重试
+            except Exception as e:
+                print(f"❌ [Data] 连接发生未知错误: {e}")
+                time.sleep(1)
 
     def _init_algorithm_modules(self):
         """动态加载算法模块（保持扩展性）"""
@@ -149,6 +157,11 @@ class PipelineExecutor:
 
         print(f"本地结果已保存至 {pos_dir}")
 
+        if self.data_socket is None:
+            # 只有极少数运行中途断线的情况会走到这里
+            print("⚠️ [Data] 运行时连接丢失，尝试重连...")
+            self._connect_host_blocking() # 再次进入阻塞重连
+
         # === 2. 循环发送数据 ===
         if self.data_socket:
             print(f"📤 [Data] 开始传输点位 {current_pos_id} 的数据，共 {len(tasks)} 张图像...")
@@ -186,8 +199,8 @@ class PipelineExecutor:
                 
             except Exception as e:
                 print(f"❌ [Data] 传输中断: {e}")
-                # 遇到错误尝试重连，保证下次可用
-                self._try_connect_host()
+                self.data_socket.close()
+                self.data_socket = None
 
     def _create_pos_dir(self) -> Path:
         """创建递增的pos目录"""
