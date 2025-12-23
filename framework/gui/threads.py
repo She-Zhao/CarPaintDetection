@@ -10,7 +10,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 # 引用现有模块
 from framework.module import HostControl
-from framework.module.transfer import DataProtocol
+from framework.module.protocol import DataProtocol
 
 class DataReceiverThread(QThread):
     """数据接收线程：监听 4097 端口，保存图像"""

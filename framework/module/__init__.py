@@ -3,6 +3,7 @@ from .camera import CameraControl
 from .socket import SocketServer
 from .host import HostControl
 from .model_config import ModelConfigManager
-from .transfer import DataProtocol
+from .protocol import DataProtocol
+from .data_sender import DataSender
 
-__all__ = ['CameraControl', 'SocketServer', 'HostControl', 'ModelConfigManager', 'DataProtocol']
+__all__ = ['CameraControl', 'SocketServer', 'HostControl', 'ModelConfigManager', 'DataProtocol', 'DataSender']

@@ -5,7 +5,7 @@ import cv2
 import json
 import time
 from pathlib import Path
-from framework.module.transfer import DataProtocol # 确保路径正确
+from framework.module.protocol import DataProtocol # 确保路径正确
 
 def run_debug_server():
     HOST = '0.0.0.0'
