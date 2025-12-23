@@ -180,9 +180,9 @@ python framework/core/robot.py    # 完全未改动
 
 ### 🚧 框架重构任务
 - [ ] `core/visiualizer.py`                  - 将GUI界面作为主机的启动端
-   - [ ] `module/camera.py`                  - 当前在GUI运行两次检测图像时会报错，因为创建了两次camera对象
-   - [ ] `GUI/`                              - 界面需要再完善下，进入后支持两个离线和在线两种模式
-   - [ ] `GUI/main_window.py`                - 界面左侧的pos文件夹现在刷新不及时
+   - [x] `module/camera.py`                  - 当前在GUI运行两次检测图像时会报错，因为创建了两次camera对象
+   - [x] `GUI/`                              - 界面需要再完善下，进入后支持两个离线和在线两种模式
+   - [x] `GUI/main_window.py`                - 界面左侧的pos文件夹现在刷新不及时
 
 ![image](/assets/GUI.png)
 - [x] `core/visiualizer.py`                  - 添加主机结果可视化 @赵射
