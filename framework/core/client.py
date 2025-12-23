@@ -84,43 +84,45 @@ def create_camera_with_callback(server, exposure=8000, max_frames=10):
     ), tracker
 
 def main():
-    """从机端主控制循环
-    
-    🔄 状态机流程:
-    1. 初始化Socket服务 (自动重试端口)
-    2. 创建带协议绑定的相机控制器
-    3. 等待主机'capture_order'指令
-    4. 设置预期采集的相机集合
-    5. 启动相机采集流程
-    6. 采集时序控制（由--delay参数控制）
-    
-    命令行参数:
-        --delay (int): 重连等待时间（毫秒），默认1000ms
-    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--delay', type=int, default=1000)
     args = parser.parse_args()
+    
     config = ModelConfigManager()
-    executor = PipelineExecutor(config)       # 引入主流程处理函数，同时初始化检测模型等
+    executor = PipelineExecutor(config)
+
     while True:
+        camera = None  # [关键] 循环开始前重置变量
         try:                 
             with SocketServer(host='10.18.18.11', base_port=4096, retries=5) as server:
+                # 创建新相机对象
                 camera, tracker = create_camera_with_callback(server)
 
                 while True:
                     host_order = server.safe_receive()  
                     if host_order != "capture_order":
-                        raise RuntimeError(f"协议错误，期望 'capture_order'，收到 '{host_order}'")
+                        # 收到异常指令，跳出内部循环，触发资源清理
+                        raise RuntimeError(f"协议错误: {host_order}")
+                    
                     print(f'收到主机拍照指令 {host_order}')
 
                     tracker.expected_serials = set(camera.img_buffers.keys())
                     raw_imgs = camera.start_grabbing()
-                    executor.execute_pipeline(raw_imgs)     # 执行整个算法处理流程
+                    executor.execute_pipeline(raw_imgs)
 
-        except (RuntimeError, ConnectionError, KeyboardInterrupt) as e:  
-            print(f"❌ 连接异常: {str(e)}")
-            print("🕒 等待重新连接...")
+        except (RuntimeError, ConnectionError, KeyboardInterrupt, Exception) as e:  
+            # [修改] 捕获所有 Exception，防止 Pylon 报错直接崩掉程序
+            print(f"❌ 运行异常: {str(e)}")
+            print("🕒 准备重新连接...")
             time.sleep(1)
+            
+        finally:
+            # [关键修改] 无论是因为断网、报错还是正常结束，
+            # 只要 camera 对象存在，就强制关闭它，释放硬件锁。
+            if camera:
+                print("正在清理相机资源...")
+                camera.release()
+                camera = None # 防止重复释放
 
 if __name__ == '__main__':
     main()

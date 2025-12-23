@@ -50,46 +50,35 @@ class CameraControl :
         self._camera_init()
 
     def _camera_init(self):
-        """初始化相机硬件连接
-        Raises:
-            RuntimeError: 未检测到可用相机时抛出
-            py.GenericException: Pylon底层错误时抛出
-        """        
-        try:
-            tlf = py.TlFactory.GetInstance()
-            di = py.DeviceInfo()
-            di.SetDeviceClass("BaslerGigE")
+        """初始化相机硬件连接"""
+        # [修改点1] 去掉 try...except，或者捕获后抛出。建议直接去掉，让错误暴露出来。
+        tlf = py.TlFactory.GetInstance()
+        di = py.DeviceInfo()
+        di.SetDeviceClass("BaslerGigE")
 
-            devs = tlf.EnumerateDevices([di,])      # 发现可用设备
-            if not devs:
-                raise RuntimeError("未检测到任何Basler GigE相机")
+        devs = tlf.EnumerateDevices([di,])
+        if not devs:
+            raise RuntimeError("未检测到任何Basler GigE相机")
 
-            # 根据实际设备数量创建相机数组
-            num_cameras = len(devs)
-            print(f"发现 {num_cameras} 台相机")
+        num_cameras = len(devs)
+        print(f"发现 {num_cameras} 台相机")
 
-            self.cam_array = py.InstantCameraArray(num_cameras)
-            self.img_buffers = {}           # {serial:[imgs_list]}
+        self.cam_array = py.InstantCameraArray(num_cameras)
+        self.img_buffers = {}
 
-            # 绑定并初始化相机
-            for idx, cam in enumerate(self.cam_array):
+        for idx, cam in enumerate(self.cam_array):
+            cam.Attach(tlf.CreateDevice(devs[idx]))
+            # 如果这里 Open 失败（比如被占用），程序会直接抛出异常，
+            # 这样 client.py 就能捕获到，而不会带着坏掉的对象继续跑。
+            cam.Open() 
 
-                # 关联物理设备
-                cam.Attach(tlf.CreateDevice(devs[idx]))
-                cam.Open()
+            if self.exposure_time: cam.ExposureTime.SetValue(self.exposure_time)
+            if self.height: cam.Height.Value = self.height
+            if self.width: cam.Width.Value = self.width
 
-                # 配置基础参数
-                if self.exposure_time: cam.ExposureTime.SetValue(self.exposure_time)
-                if self.height: cam.Height.Value = self.height
-                if self.width: cam.Width.Value = self.width
-
-                # 生成唯一标识
-                serial = int(cam.DeviceInfo.GetSerialNumber())
-                cam.SetCameraContext(serial)            # 使用序列号作为上下文标识，传入的参数必须是int型
-                self.img_buffers[serial] = []
-
-        except py.GenericException as e:
-            print(f"Pylon错误: {e}")
+            serial = int(cam.DeviceInfo.GetSerialNumber())
+            cam.SetCameraContext(serial)
+            self.img_buffers[serial] = []
 
     def start_grabbing(self):
         """启动多相机同步采集流程
@@ -177,3 +166,26 @@ class CameraControl :
                 cv2.imwrite(os.path.join(save_dir, f"{self.IMAGE_NAMES[img_idx]}.png"), img)
             print(f"相机 {serial} 已保存 {len(imgs)} 张图像")
             self.img_buffers[serial] = []
+
+    # [修改点2] 新增资源释放方法
+    def release(self):
+        """释放相机资源，关闭设备连接"""
+        if hasattr(self, 'cam_array') and self.cam_array:
+            try:
+                # 如果正在采集，先停止
+                if self.cam_array.IsGrabbing():
+                    self.cam_array.StopGrabbing()
+                
+                # 关闭连接，释放硬件锁
+                if self.cam_array.IsOpen():
+                    self.cam_array.Close()
+                
+                # 解除绑定
+                self.cam_array.DetachDevice()
+                print("📷 相机资源已释放")
+            except Exception as e:
+                print(f"释放相机资源时出错: {e}")
+
+    def __del__(self):
+        """析构函数，作为最后一道防线"""
+        self.release()
