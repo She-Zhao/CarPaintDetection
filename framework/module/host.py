@@ -58,39 +58,58 @@ class HostControl():
 
         
     def Projected_init(self):
-        """初始化投影系统
-        Returns:
-            np.ndarray: 加载的灰度图像序列，形状为(N,H,W)
-            其中N为图像数量，H为高度，W为宽度
-            
-        工作流程:
-        1. 从目录加载按数字排序的灰度图像
-        2. 配置全屏投影窗口
-        3. 显示首帧图像完成初始化
-        """        
+        """初始化投影系统 (支持双屏自动识别)"""        
+        # 1. 加载图像 (保持原有逻辑)
         img = []
+        if not os.path.exists(self.folder_path):
+             # 增加一个简单的容错，防止路径不对报错
+             raise FileNotFoundError(f"投影路径不存在: {self.folder_path}")
+
         files = os.listdir(self.folder_path)
         files = sorted(files, key=lambda x: int(x.split('.')[0]))
         for filename in files:
-            file_path = os.path.join(self.folder_path, filename)             # 构建完整的文件路径
-            img_buffer = cv2.imread(file_path,cv2.IMREAD_GRAYSCALE)     # 使用OpenCV读取图像
-            img.append(img_buffer)                                      # 将图像添加到数组中
+            file_path = os.path.join(self.folder_path, filename)
+            # 确保读取成功
+            img_buffer = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+            if img_buffer is not None:
+                img.append(img_buffer)
+        
+        if not img:
+            raise RuntimeError("未找到投影图片")
+            
         image = np.array(img)
+        self.image = image # 确保类属性被赋值，供 Take_photo 使用
+        self.image_nums = len(self.image)
         
-        # 初始化屏幕
-        screen_id = 0
-        is_color = False
-    
-        # get the size of the screen
-        screen = screeninfo.get_monitors()[screen_id]
-        width, height = screen.width, screen.height
+        # 2. 获取屏幕信息 (修改部分)
+        monitors = screeninfo.get_monitors()
+        if not monitors:
+            raise RuntimeError("未检测到显示器")
+
+        # 默认使用主屏 (Index 0)
+        target_monitor = monitors[0]
         
-        cv2.namedWindow('projector', cv2.WND_PROP_FULLSCREEN)                                                           
-        cv2.moveWindow('projector', screen.x - 1, screen.y - 1)
+        # 如果检测到多个屏幕，优先使用第二个屏幕 (Index 1) 作为投影屏
+        if len(monitors) > 1:
+            target_monitor = monitors[1]
+            print(f"[Display] 检测到多显示器，将在扩展屏投影: {target_monitor.name}")
+        else:
+            print(f"[Display] 仅检测到主屏，将在主屏投影")
+
+        # 3. 创建并移动窗口
+        # 使用 WINDOW_NORMAL 允许改变窗口大小和位置
+        cv2.namedWindow('projector', cv2.WINDOW_NORMAL) 
+        
+        # 移动窗口到目标屏幕的起始坐标 (x, y)
+        cv2.moveWindow('projector', target_monitor.x, target_monitor.y)
+        
+        # 设置全屏
         cv2.setWindowProperty('projector', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        
+        # 显示第一帧
         cv2.imshow('projector', image[0])
-        k = cv2.waitKey(60)
-        # 初始化屏幕完毕
+        cv2.waitKey(100) # 给一点时间让窗口重绘
+        
         return image
     
     

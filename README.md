@@ -181,6 +181,8 @@ python framework/core/robot.py    # 完全未改动
 ### 🚧 框架重构任务
 - [ ] `script/start_host.sh`                 - 主机的启动脚本
 - [ ] `script/start_slave.sh`                - 从机的启动脚本（设置mtu+启动client.py）
+- 将机械臂部分的代码解耦出来，方便后续集成
+- 为整个项目添加注释
 
 - [x] `core/visiualizer.py`                  - 将GUI界面作为主机的启动端
    - [x] `module/camera.py`                  - 当前在GUI运行两次检测图像时会报错，因为创建了两次camera对象
