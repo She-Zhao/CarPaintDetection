@@ -179,16 +179,17 @@ python framework/core/robot.py    # 完全未改动
 ## 🔜 4.TODO
 
 ### 🚧 框架重构任务
-- [ ] `script/start_host.sh`                 - 主机的启动脚本
-- [ ] `script/start_slave.sh`                - 从机的启动脚本（设置mtu+启动client.py）
+- [x] `script/start_server.bat`                 - 主机的启动脚本
+- [x] `script/start_client.sh`                - 从机的启动脚本（设置mtu+启动client.py）
 - 将机械臂部分的代码解耦出来，方便后续集成
 - 为整个项目添加注释
+
 
 - [x] `core/visiualizer.py`                  - 将GUI界面作为主机的启动端
    - [x] `module/camera.py`                  - 当前在GUI运行两次检测图像时会报错，因为创建了两次camera对象
    - [x] `GUI/`                              - 界面需要再完善下，进入后支持两个离线和在线两种模式
    - [x] `GUI/main_window.py`                - 界面左侧的pos文件夹现在刷新不及时
-   - [ ]`GUI/main_window.py`                 - 将投屏和显示放在两块屏幕上
+   - [x]`GUI/main_window.py`                 - 将投屏和显示放在两块屏幕上
 
 ![image](/assets/GUI.png)
 - [x] `core/visiualizer.py`                  - 添加主机结果可视化 @赵射
