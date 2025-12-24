@@ -181,7 +181,6 @@ python framework/core/robot.py    # 完全未改动
 ### 🚧 框架重构任务
 - [x] `script/start_server.bat`                 - 主机的启动脚本
 - [x] `script/start_client.sh`                - 从机的启动脚本（设置mtu+启动client.py）
-- 将机械臂部分的代码解耦出来，方便后续集成
 - 为整个项目添加注释
 
 
@@ -215,7 +214,8 @@ python framework/core/robot.py    # 完全未改动
    - [x] `engine/detect/detect_api.py`          - 还需要改一下__call__方法，因为不同模型的输入图像不一样，需要跟@刘佳璇对一下新模型的输入形式，最好直接将输入包装成[N, C, H, W]的Tensor
    ![image](/assets/detect_api.png)
 - [ ] `engine/preprocess/stitched2.py`       - 函数输入修改、有效区域提取代码加入 @郑豪杰
-- [ ] `core/robot.py`                     - 机械臂和上位机（主机）通信，实现上位机给定一个点，机械臂走到相应的位置即可 @赵航 @李志翀   
+- [ ] `core/robot.py`                     - 机械臂和上位机（主机）通信，实现上位机给定一个点，机械臂走到相应的位置即可 @赵航 @李志翀 
+- [ ] `gui/threads.py`                       - 将`core/robot.py`的代码集成到RobotSimulationThread里面
 - [ ] `engine/detect/detect_api.py`             - 模型部署     
    - [ ] `engine/detect/detect_api.py`          - YOLO模型部署，重点是跟PMD衔接上，以及输入模型的尺寸 @郑豪杰
 - [ ] `core/offline`                      - 机械臂轨迹规划算法及二值化遗传算法加入   @郑豪杰 @赵航
