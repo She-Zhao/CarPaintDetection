@@ -138,9 +138,9 @@ cd CarPaintDetection
 在主机界面依次点击"在线实时监控"、"启动自动检测" 即可开始作业。
 
 ## 📚 文档导航
-* 🛠️ **环境搭建与操作**：详见 [操作手册 (User Manual)](docs/操作手册.md)
+* 🛠️ **环境搭建与操作**：详见 [操作手册 (User Manual)](docs/User_manual.md)
   *(包含：)*
-* 🏗️ **技术细节与原理**：详见 [系统架构设计 (Architecture)](docs/系统架构与设计思路.md)
+* 🏗️ **技术细节与原理**：详见 [系统架构设计 (Architecture)](docs/System_Architecture.md)
   *(包含：双线程模型、Socket协议定义、算法流水线)*
 
 
