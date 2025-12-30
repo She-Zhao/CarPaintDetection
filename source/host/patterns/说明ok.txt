@@ -1,3 +1,0 @@
-拍白光照片，只需要在jiege.py中将
-folder_path = r'/home/nvidia/demo/host/patterns/16'改为
-folder_path = r'/home/nvidia/demo/host/patterns/stripe16'即可

@@ -1,3 +1,0 @@
-patterns，包括投影的图像，pmd的和条纹光的
-python_S7，主机运行完整流程的
-host_capture_point，定点拍照的，从机启动slavex_xxx.py后，运行host_capture_point.py，四个相机同时拍照（不涉及到机械臂）
