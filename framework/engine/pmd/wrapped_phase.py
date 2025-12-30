@@ -73,7 +73,7 @@ class WrappedPhase():
             torch.Tensor: 堆叠后的4张相移图，形状(4, H, W)
         """
         if self.imgs is not None:
-            return self._convert_to_tensor(self.imgs[-4:])
+            return self._convert_to_tensor(self.imgs[5:9])
         return self._load_from_datapath()
 
     def _convert_to_tensor(self, img_arrays: np.ndarray) -> torch.Tensor:
