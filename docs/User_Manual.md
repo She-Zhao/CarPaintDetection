@@ -21,7 +21,10 @@
 请参考下方的硬件连接拓扑图进行接线：
 
 > ![硬件连接拓扑图](/assets/Hardware_connection.png)
+<p align="center">图：系统硬件连接拓扑图</p>
+
 > ![硬件连接实物图](/assets/Hardware_connection_reality.png)
+<div align="center">图：硬件连接实际物理布局照片</div>
 
 
 ### 1.2 启动前检查清单 (Checklist)
@@ -183,5 +186,5 @@ cd CarPaintDetection
 | **投影仪没有显示条纹，只有黑屏** | 窗口未全屏或位置错误 | 1. 确保 Windows 显示设置中为 **"扩展模式"**。<br>2. 鼠标点击一下投影画面按 `F11` 或检查 `host.py` 分辨率设置。 |
 
 ---
-> 📅 **文档更新日期**: 2025-12-26
+> 📅 **文档更新日期**: 2025-12-30
 > 📧 **技术支持**: (赵射/QQ1957972156)
