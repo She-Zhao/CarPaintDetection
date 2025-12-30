@@ -149,7 +149,7 @@ class HostControl():
         """        
         for j in range(self.image_nums):
             cv2.imshow('projector', self.image[j])
-            k = cv2.waitKey(500)
+            k = cv2.waitKey(100)
             # 发送命令
             message = 'capture_order'
             self._safe_send(message)  # 封装发送方法

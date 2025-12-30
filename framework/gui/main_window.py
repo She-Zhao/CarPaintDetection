@@ -544,7 +544,7 @@ class DefectVisualizer(QMainWindow):
             self.tab_online.btn_start.setEnabled(False)
         else:
             # TODO: 修改为实际路径
-            project_folder = r'D:\Project\CarPaintDetection\framework\cfg\patterns\nums10' 
+            project_folder = r'D:\Project\CarPaintDetection\framework\cfg\patterns\pmd' 
             self.robot_thread = RobotSimulationThread(project_folder)
             
             # 绑定日志
